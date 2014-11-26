@@ -1,9 +1,9 @@
 package org.sep4j;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Date;
@@ -30,7 +30,7 @@ public class SepExcelUtilsTest {
 	@Test
 	public void saveAndParseTest() throws Exception {
 		// the map
-		LinkedHashMap<String, String> headerMap = new LinkedHashMap<String, String>();
+		final LinkedHashMap<String, String> headerMap = new LinkedHashMap<String, String>();
 		headerMap.put("id", "User ID");
 		headerMap.put("username", "User Name");
 		headerMap.put("alias", "Alias/别名");
@@ -40,27 +40,53 @@ public class SepExcelUtilsTest {
 		headerMap.put("fakeProp", "Fake Property");
 
 		// the records
-		List<User> records = new ArrayList<User>();
+		final List<User> records = new ArrayList<User>();
 		records.add(User.createInstance(1, null, "David Beckham", new Date(), new BigDecimal(100.00)));
 		records.add(User.createInstance(2, "ronaldo", null, new Date(), new BigDecimal(231)));
 		records.add(User.createInstance(3, "lifeifeng", "李玮峰", null, BigDecimal.ZERO));
 		records.add(User.createInstance(4, "Bak Ji-seong", "박지성", new Date(), new BigDecimal(59)));
 
 		// save it
-		doSave(headerMap, records, true);
-		doSave(headerMap, records, false);
+		doSave(new SaveCallback() {
+			public void doIt(OutputStream outputStream, List<DatumError> dataErrors) throws IOException {
+				SepExcelUtils.save(headerMap, records, outputStream);
+			}
+		});
+		
+		
+		// save it
+		doSave(new SaveCallback() {
+			public void doIt(OutputStream outputStream, List<DatumError> dataErrors) throws IOException {
+				SepExcelUtils.save(headerMap, records, outputStream, "!!ERROR-A!!");
+			}
+		});
+		
+		
+		// save it
+		doSave(new SaveCallback() {
+			public void doIt(OutputStream outputStream, List<DatumError> dataErrors) throws IOException {
+				SepExcelUtils.save(headerMap, records, outputStream, "!!ERROR-B!!", dataErrors);
+			}
+		});
+
+		
+		// save it
+		doSave(new SaveCallback() {
+			public void doIt(OutputStream outputStream, List<DatumError> dataErrors) throws IOException {
+				SepExcelUtils.saveIfNoDatumError(headerMap, records, outputStream, "!!ERROR-C!!", dataErrors);
+			}
+		});
 
 	}
 
-	private void doSave(LinkedHashMap<String, String> headerMap, List<User> records, boolean stillSaveIfError) throws FileNotFoundException,
-			IOException {
+	private void doSave(SaveCallback callback) throws Exception {
 		FileOutputStream outputStream = null;
 		try {
 			File outFile = createFile();
-			List<DatumError> dateErrors = new ArrayList<DatumError>();
+			List<DatumError> dataErrors = new ArrayList<DatumError>();
 			outputStream = new FileOutputStream(outFile);
-			SepExcelUtils.save(headerMap, records, outputStream, "someSheet", "ERROR!!", dateErrors, stillSaveIfError);
-			for (DatumError de : dateErrors) {
+			callback.doIt(outputStream, dataErrors);
+			for (DatumError de : dataErrors) {
 				System.out.println(de);
 			}
 			System.out.println("check " + outFile);
@@ -70,10 +96,14 @@ public class SepExcelUtilsTest {
 	}
 
 	private File createFile() {
-		File outDir = new File(System.getProperty("user.home") + "/temp/sep");
+		File outDir = new File(System.getProperty("user.home") + "/temp/sep");	
 		outDir.mkdirs();
 		File outFile = new File(outDir, "out" + System.currentTimeMillis() + ".xlsx");
 		return outFile;
+	}
+
+	private static interface SaveCallback {
+		public void doIt(OutputStream outputStream, List<DatumError> dataErrors) throws Exception;
 	}
 
 	public static final class User {
