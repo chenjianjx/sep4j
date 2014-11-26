@@ -12,6 +12,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang.builder.ToStringStyle;
 import org.apache.commons.lang.time.DateFormatUtils;
 import org.junit.Test;
 
@@ -89,11 +91,15 @@ public class SepExcelUtilsTest {
 		reverseHeaderMap.put("Account Balance", "balance");
 		reverseHeaderMap.put("Fake Prop", "fakeProp");
 
-		List<CellException> cellErrors = new ArrayList<CellException>();
-		InputStream inputStream = this.getClass().getResourceAsStream("sample-excel.xlsx");
+		List<CellError> cellErrors = new ArrayList<CellError>();
+		InputStream inputStream = this.getClass().getResourceAsStream("/sample-excel.xlsx");
 		List<User> records = SepExcelUtils.parse(reverseHeaderMap, inputStream, cellErrors, User.class);
 		for (User user : records) {
 			System.out.println(user);
+		}
+
+		for (CellError cellError : cellErrors) {
+			System.out.println(cellError);
 		}
 
 	}
@@ -195,6 +201,10 @@ public class SepExcelUtilsTest {
 			this.balance = balance;
 		}
 
+		@Override
+		public String toString() {
+			return ToStringBuilder.reflectionToString(this, ToStringStyle.SHORT_PREFIX_STYLE);
+		}
 	}
 
 }
