@@ -3,6 +3,8 @@ package org.sep4j.support;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
 
@@ -57,6 +59,28 @@ public class SepReflectionHelper {
 		} catch (NoSuchMethodException e) {
 			return null;
 		}
+	}
+
+	public static List<Method> findSettersByPropName(Class<?> objClass, String propName) {
+		if (objClass == null) {
+			throw new IllegalArgumentException("The objClass cannot be null");
+		}
+		if (propName == null) {
+			throw new IllegalArgumentException("The propName cannot be null");
+		}
+
+		List<Method> setters = new ArrayList<Method>();
+		Method[] methodArray = objClass.getMethods();
+		if (methodArray == null) {
+			return setters;
+		}
+		for (Method method : methodArray) {
+			if (method.getName().equals("set" + StringUtils.capitalize(propName))
+					&& (method.getParameterTypes() != null && method.getParameterTypes().length == 1)) {
+				setters.add(method);
+			}
+		}
+		return setters;
 	}
 
 	private static Object invokeGetter(Method getter, Object object) {

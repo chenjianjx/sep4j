@@ -33,6 +33,11 @@ public class CellError implements Serializable {
 	 */
 	private String headerText;
 
+	/**
+	 * the cause of the error. It could be null
+	 */
+	private Exception cause;
+
 	public int getRowIndex() {
 		return rowIndex;
 	}
@@ -73,10 +78,17 @@ public class CellError implements Serializable {
 		this.headerText = headerText;
 	}
 
-	@Override
-	public String toString() {
-		return MessageFormat.format("rowIndex = {0}, columnIndex = {1}, propName = \"{2}\", headerText = \"{3}\" ", rowIndex, columnIndex, propName,
-				headerText);
+	public Exception getCause() {
+		return cause;
 	}
 
+	public void setCause(Exception cause) {
+		this.cause = cause;
+	}
+
+	@Override
+	public String toString() {
+		return MessageFormat.format("rowIndex = {0}, columnIndex = {1}, propName = \"{2}\", headerText = \"{3}\", cause = {4} ", rowIndex,
+				columnIndex, propName, headerText, cause);
+	}
 }

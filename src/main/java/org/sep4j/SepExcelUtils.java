@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Method;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -20,6 +21,7 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.sep4j.support.SepBasicTypeConverts;
 import org.sep4j.support.SepReflectionHelper;
 
 /**
@@ -129,8 +131,7 @@ public class SepExcelUtils {
 	}
 
 	/**
-	 * save records to a new workbook even if there are datum errors in the
-	 * records.
+	 * save records to a new workbook.
 	 * 
 	 * @param headerMap
 	 *            <propName, headerText>, for example <"username" of User class,
@@ -233,32 +234,51 @@ public class SepExcelUtils {
 		T record = newInstance(recordClass);
 
 		for (short columnIndex = 0; columnIndex < row.getLastCellNum(); columnIndex++) {
-			ColumnMeta columnMeta = columnMetaMap.get(columnIndex);
+			ColumnMeta columnMeta = columnMetaMap.get(columnIndex);			
 			if (columnMeta == null || columnMeta.propName == null) {
 				continue;
 			}
-
+			String propName = columnMeta.propName;
 			Cell cell = row.getCell(columnIndex);
-			String text = readCellAsString(cell);
+			String cellText = readCellAsString(cell);
 			try {
-				Method setter = SepReflectionHelper.findSetterByPropNameAndType(recordClass, columnMeta.propName, String.class);
-				if (setter != null) {
-					SepReflectionHelper.invokeSetter(setter, record, text);
-				}
+				setPropertyFromCellText(recordClass, record, propName, cellText);
 			} catch (Exception e) {
 				if (cellErrors != null) {
 					CellError ce = new CellError();
 					ce.setColumnIndex(columnIndex);
 					ce.setHeaderText(columnMeta.headerText);
-					ce.setPropName(columnMeta.propName);
+					ce.setPropName(propName);
 					ce.setRowIndex(rowIndex);
+					ce.setCause(e);
 					cellErrors.add(ce);
 				}
-
 			}
 		}
 
 		return record;
+	}
+
+	private static <T> void setPropertyFromCellText(Class<T> recordClass, T record, String propName, String cellText) {
+		// try to find a string-type setter first
+		Method stringSetter = SepReflectionHelper.findSetterByPropNameAndType(recordClass, propName, String.class);
+		if (stringSetter != null) {
+			SepReflectionHelper.invokeSetter(stringSetter, record, cellText);
+			return;
+		}
+
+		// no string-type setter? do a guess!
+		List<Method> setters = SepReflectionHelper.findSettersByPropName(recordClass, propName);
+		for (Method setter : setters) {
+			Class<?> propClass = setter.getParameterTypes()[0];
+			if (SepBasicTypeConverts.canFromThisString(cellText, propClass)) {
+				Object propValue = SepBasicTypeConverts.fromThisString(cellText, propClass);
+				SepReflectionHelper.invokeSetter(setter, record, propValue);
+				return;
+			}
+		}
+
+		throw new IllegalArgumentException(MessageFormat.format("No suitable setter for property \"{0}\" with cellText \"{1}\" ", propName, cellText));
 	}
 
 	/**

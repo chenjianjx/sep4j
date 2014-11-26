@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigDecimal;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedHashMap;
@@ -15,6 +16,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 import org.apache.commons.lang.time.DateFormatUtils;
+import org.apache.commons.lang.time.DateUtils;
 import org.junit.Test;
 
 /**
@@ -187,6 +189,18 @@ public class SepExcelUtilsTest {
 				return null;
 			}
 			return DateFormatUtils.format(birthDay, "yyyy-MM-dd");
+		}
+
+		public void setFormattedBirthDay(String s) {
+			if (s == null) {
+				return;
+			}
+			try {
+				Date d = DateUtils.parseDate(s, new String[] { "yyyy-MM-dd" });
+				this.setBirthDay(d);
+			} catch (ParseException e) {
+				return;
+			}
 		}
 
 		public void setBirthDay(Date birthDay) {
