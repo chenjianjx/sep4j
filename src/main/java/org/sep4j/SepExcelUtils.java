@@ -1,6 +1,7 @@
 package org.sep4j;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -14,6 +15,7 @@ import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 /**
@@ -25,19 +27,6 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
  */
 public class SepExcelUtils {
 
-	// public static <T> void saveSuppressingDatumErr(LinkedHashMap<String,
-	// String> headerMap, List<T> records, OutputStream outputStream,
-	// String sheetName, String datumErrPlaceholder) throws IOException {
-	// try {
-	// save(headerMap, records, outputStream, sheetName, true,
-	// datumErrPlaceholder);
-	// } catch (DatumError e) {
-	// throw new
-	// IllegalStateException("This should never happen. Something is wrong with this code");
-	// }
-	// }
-	//
-
 	/**
 	 * save records to a new workbook even if there are datum errors in the
 	 * records. Any datum error will lead to an empty cell.
@@ -46,7 +35,8 @@ public class SepExcelUtils {
 	 *            <propName, headerText>, for example <"username" field of User
 	 *            class, "User Name" as the excel header text>.
 	 * @param records
-	 *            the records to save.
+	 *            the records to save. Note the element type cannot be a private
+	 *            class
 	 * @param outputStream
 	 *            the output stream for the excel
 	 * @throws IOException
@@ -65,7 +55,8 @@ public class SepExcelUtils {
 	 *            "User Name" as the excel header>.
 	 * 
 	 * @param records
-	 *            the records to save.
+	 *            the records to save. Note the element type cannot be a private
+	 *            class
 	 * @param outputStream
 	 *            the output stream for the excel
 	 * @param datumErrPlaceholder
@@ -82,13 +73,15 @@ public class SepExcelUtils {
 	/**
 	 * save records to a new workbook even if there are datum errors in the
 	 * records. Any datum error will lead to datumErrPlaceholder being written
-	 * to the cell. All the datum errors will be saved to dataErrors
+	 * to the cell. All the datum errors will be saved to dataErrors indicating
+	 * the recordIndex of the datum
 	 * 
 	 * @param headerMap
 	 *            <propName, headerText>, for example <"username" of User class,
 	 *            "User Name" as the excel header>.
 	 * @param records
-	 *            the records to save.
+	 *            the records to save. Note the element type cannot be a private
+	 *            class
 	 * @param outputStream
 	 *            the output stream for the excel
 	 * @param datumErrPlaceholder
@@ -107,13 +100,15 @@ public class SepExcelUtils {
 	/**
 	 * save records to a new workbook only if there are no datum errors in the
 	 * records. Any datum error will lead to datumErrPlaceholder being written
-	 * to the cell. All the datum errors will be saved to dataErrors
+	 * to the cell. All the datum errors will be saved to dataErrors indicating
+	 * the recordIndex of the datum
 	 * 
 	 * @param headerMap
 	 *            <propName, headerText>, for example <"username" of User class,
 	 *            "User Name" as the excel header>.
 	 * @param records
-	 *            the records to save.
+	 *            the records to save. Note the element type cannot be a private
+	 *            class
 	 * @param outputStream
 	 *            the output stream for the excel
 	 * @param datumErrPlaceholder
@@ -137,7 +132,8 @@ public class SepExcelUtils {
 	 *            <propName, headerText>, for example <"username" of User class,
 	 *            "User Name" as the excel header>.
 	 * @param records
-	 *            the records to save.
+	 *            the records to save. Note the element type cannot be a private
+	 *            class
 	 * @param outputStream
 	 *            the output stream for the excel
 	 * @param datumErrPlaceholder
@@ -178,6 +174,145 @@ public class SepExcelUtils {
 			return;
 		}
 		wb.write(outputStream);
+	}
+
+	static <T> List<T> parse(Map<String, String> reverseHeaderMap, InputStream inputStream, List<CellException> cellErrors, Class<T> recordClass)
+			throws Exception {
+		if (reverseHeaderMap == null || reverseHeaderMap.isEmpty()) {
+			throw new IllegalArgumentException("the reverseHeaderMap can not be null or empty");
+		}
+
+		int columnIndex = 0;
+		for (Map.Entry<String, String> entry : reverseHeaderMap.entrySet()) {
+			String headerText = entry.getKey();
+			String propName = entry.getValue();
+			if (StringUtils.isBlank(headerText)) {
+				throw new IllegalArgumentException("One header defined in the reverseHeaderMap has a blank headerText. Header Index (0-based) = "
+						+ columnIndex);
+			}
+
+			if (StringUtils.isBlank(propName)) {
+				throw new IllegalArgumentException("One header defined in the reverseHeaderMap has a blank propName. Header Index (0-based) = "
+						+ columnIndex);
+			}
+			columnIndex++;
+		}
+
+		Workbook workbook = WorkbookFactory.create(inputStream);
+		if (workbook.getNumberOfSheets() <= 0) {
+			return new ArrayList<T>();
+		}
+
+		Sheet sheet = workbook.getSheetAt(0);
+		// less than two rows, meaning no data rows or nothing
+		if (sheet.getLastRowNum() < 1) {
+			return new ArrayList<T>();
+		}
+
+		// key = columnIndex, value= propName
+		Map<Short, String> propNameIndexMap = parseHeader(reverseHeaderMap, sheet.getRow(0));
+		if (propNameIndexMap.isEmpty()) {
+			return new ArrayList<T>();
+		}
+
+		// now do the data rows
+		List<T> records = new ArrayList<T>();
+		for (int rowIndex = 1; rowIndex <= sheet.getLastRowNum(); rowIndex++) {
+			Row row = sheet.getRow(rowIndex);
+			T record = parseDataRow(propNameIndexMap, row, recordClass);
+			records.add(record);
+		}
+		return records;
+	}
+
+	private static <T> T parseDataRow(Map<Short, String> propNameIndexMap, Row row, Class<T> recordClass) {
+		T record = newInstance(recordClass);
+
+		for (short columnIndex = 0; columnIndex < row.getLastCellNum(); columnIndex++) {
+			String propName = propNameIndexMap.get(columnIndex);
+			if (propName == null) {
+				continue;
+			}
+			Cell cell = row.getCell(columnIndex);
+			String text = readCellAsString(cell);
+
+			try {
+				PropertyUtils.setProperty(record, propName, (String) text);
+			} catch (Exception e) {
+			}
+		}
+
+		return record;
+	}
+
+	private static <T> T newInstance(Class<T> recordClass) {
+		try {
+			return recordClass.newInstance();
+		} catch (InstantiationException e) {
+			throw new IllegalArgumentException(e);
+		} catch (IllegalAccessException e) {
+			throw new IllegalArgumentException(e);
+		}
+	}
+
+	private static Map<Short, String> parseHeader(Map<String, String> reverseHeaderMap, Row row) {
+		Map<Short, String> propNameMap = new LinkedHashMap<Short, String>();
+
+		// note that row.getLastCellNum() is one-based
+		for (short columnIndex = 0; columnIndex < row.getLastCellNum(); columnIndex++) {
+			Cell cell = row.getCell(columnIndex);
+			String text = readCellAsString(cell);
+			if (text == null) {
+				continue;
+			}
+			String propName = reverseHeaderMap.get(text);
+			if (propName == null) {
+				continue;
+			}
+			propNameMap.put(columnIndex, propName);
+		}
+		return propNameMap;
+	}
+
+	/**
+	 * read the cell's string value no matter what type the cell is of. Actually
+	 * it only supports 3 types: string, numeric and boolean.
+	 * 
+	 * @param cell
+	 * @return the string representation of the cell (will be trimmed to null)
+	 */
+	private static String readCellAsString(Cell cell) {
+		if (cell == null) {
+			return null;
+		}
+
+		if (cell.getCellType() == Cell.CELL_TYPE_BLANK) {
+			return null;
+		}
+
+		if (cell.getCellType() == Cell.CELL_TYPE_BOOLEAN) {
+			return String.valueOf(cell.getBooleanCellValue());
+		}
+
+		if (cell.getCellType() == Cell.CELL_TYPE_ERROR) {
+			return null;
+		}
+
+		if (cell.getCellType() == Cell.CELL_TYPE_FORMULA) {
+			return null;
+		}
+
+		if (cell.getCellType() == Cell.CELL_TYPE_NUMERIC) {
+			double v = cell.getNumericCellValue();
+			return String.valueOf(v);
+		}
+
+		if (cell.getCellType() == Cell.CELL_TYPE_STRING) {
+			String s = cell.getStringCellValue();
+			return StringUtils.trimToNull(s);
+		}
+		return null;
+
 	}
 
 	static void validateHeaderMap(LinkedHashMap<String, String> headerMap) {

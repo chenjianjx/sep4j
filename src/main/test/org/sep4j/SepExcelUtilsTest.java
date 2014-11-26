@@ -37,7 +37,7 @@ public class SepExcelUtilsTest {
 		headerMap.put("birthDay", "Birth Day");
 		headerMap.put("formattedBirthDay", "Formatted Birth Day");
 		headerMap.put("balance", "Account Balance");
-		headerMap.put("fakeProp", "Fake Property");
+		headerMap.put("fakeProp", null);
 
 		// the records
 		final List<User> records = new ArrayList<User>();
@@ -52,16 +52,14 @@ public class SepExcelUtilsTest {
 				SepExcelUtils.save(headerMap, records, outputStream);
 			}
 		});
-		
-		
+
 		// save it
 		doSave(new SaveCallback() {
 			public void doIt(OutputStream outputStream, List<DatumError> dataErrors) throws IOException {
 				SepExcelUtils.save(headerMap, records, outputStream, "!!ERROR-A!!");
 			}
 		});
-		
-		
+
 		// save it
 		doSave(new SaveCallback() {
 			public void doIt(OutputStream outputStream, List<DatumError> dataErrors) throws IOException {
@@ -69,7 +67,6 @@ public class SepExcelUtilsTest {
 			}
 		});
 
-		
 		// save it
 		doSave(new SaveCallback() {
 			public void doIt(OutputStream outputStream, List<DatumError> dataErrors) throws IOException {
@@ -96,7 +93,7 @@ public class SepExcelUtilsTest {
 	}
 
 	private File createFile() {
-		File outDir = new File(System.getProperty("user.home") + "/temp/sep");	
+		File outDir = new File(System.getProperty("user.home") + "/temp/sep");
 		outDir.mkdirs();
 		File outFile = new File(outDir, "out" + System.currentTimeMillis() + ".xlsx");
 		return outFile;
