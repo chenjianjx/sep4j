@@ -3,6 +3,7 @@ package org.sep4j;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -73,6 +74,27 @@ public class SepExcelUtilsTest {
 				SepExcelUtils.saveIfNoDatumError(headerMap, records, outputStream, "!!ERROR-C!!", dataErrors);
 			}
 		});
+
+	}
+
+	@Test
+	public void parseTest() throws Exception {
+		// the reversed map
+		final LinkedHashMap<String, String> reverseHeaderMap = new LinkedHashMap<String, String>();
+		reverseHeaderMap.put("User ID", "id");
+		reverseHeaderMap.put("User Name", "username");
+		reverseHeaderMap.put("Alias/别名", "alias");
+		reverseHeaderMap.put("Birth Day", "birthDay");
+		reverseHeaderMap.put("Formatted Birth Day", "formattedBirthDay");
+		reverseHeaderMap.put("Account Balance", "balance");
+		reverseHeaderMap.put("Fake Prop", "fakeProp");
+
+		List<CellException> cellErrors = new ArrayList<CellException>();
+		InputStream inputStream = this.getClass().getResourceAsStream("sample-excel.xlsx");
+		List<User> records = SepExcelUtils.parse(reverseHeaderMap, inputStream, cellErrors, User.class);
+		for (User user : records) {
+			System.out.println(user);
+		}
 
 	}
 
