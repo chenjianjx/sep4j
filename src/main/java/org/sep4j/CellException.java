@@ -48,7 +48,8 @@ public class CellException extends Exception {
 
 	@Override
 	public String toString() {
-		return MessageFormat.format("rowIndex = {0}, columnIndex = {1}, propName = {2}", rowIndex, columnIndex, propName);
+		return this.getClass().getName() + ":"
+				+ MessageFormat.format("rowIndex = {0}, columnIndex = {1}, propName = \"{2}\"", rowIndex, columnIndex, propName);
 	}
 
 }

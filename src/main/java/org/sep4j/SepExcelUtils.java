@@ -23,22 +23,27 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
  */
 public class SepExcelUtils {
 
-	public static <T> void saveSuppressingDatumErr(LinkedHashMap<String, String> headerMap, List<T> records, OutputStream outputStream,
-			String sheetName, String datumErrPlaceholder) throws IOException {
-		try {
-			save(headerMap, records, outputStream, sheetName, true, datumErrPlaceholder);
-		} catch (DatumException e) {
-			throw new IllegalStateException("This should never happen. Something is wrong with this code");
-		}
-	}
+	// public static <T> void saveSuppressingDatumErr(LinkedHashMap<String,
+	// String> headerMap, List<T> records, OutputStream outputStream,
+	// String sheetName, String datumErrPlaceholder) throws IOException {
+	// try {
+	// save(headerMap, records, outputStream, sheetName, true,
+	// datumErrPlaceholder);
+	// } catch (DatumError e) {
+	// throw new
+	// IllegalStateException("This should never happen. Something is wrong with this code");
+	// }
+	// }
+	//
+	// public static <T> void saveFailingOnDatumErr(LinkedHashMap<String,
+	// String> headerMap, List<T> records, OutputStream outputStream, String
+	// sheetName)
+	// throws IOException, DatumError {
+	// save(headerMap, records, outputStream, sheetName, true, null);
+	// }
 
-	public static <T> void saveFailingOnDatumErr(LinkedHashMap<String, String> headerMap, List<T> records, OutputStream outputStream, String sheetName)
-			throws IOException, DatumException {
-		save(headerMap, records, outputStream, sheetName, true, null);
-	}
-
-	private static <T> void save(LinkedHashMap<String, String> headerMap, List<T> records, OutputStream outputStream, String sheetName,
-			boolean suppressDatumErr, String datumErrPlaceholder) throws IOException, DatumException {
+	static <T> void save(LinkedHashMap<String, String> headerMap, List<T> records, OutputStream outputStream, String sheetName,
+			String datumErrPlaceholder, List<DatumError> dataErrors, boolean stillSaveIfError) throws IOException {
 		validateHeaderMap(headerMap);
 
 		if (records == null || records.isEmpty()) {
@@ -56,10 +61,13 @@ public class SepExcelUtils {
 		for (int recordIndex = 0; recordIndex < records.size(); recordIndex++) {
 			T record = records.get(recordIndex);
 			int rowIndex = recordIndex + 1;
-			createRow(headerMap, record, recordIndex, sheet, rowIndex, suppressDatumErr, datumErrPlaceholder);
+			createRow(headerMap, record, recordIndex, sheet, rowIndex, datumErrPlaceholder, dataErrors);
+		}
+
+		if (dataErrors != null && dataErrors.size() > 0 && !stillSaveIfError) {
+			return;
 		}
 		wb.write(outputStream);
-
 	}
 
 	static void validateHeaderMap(LinkedHashMap<String, String> headerMap) {
@@ -88,7 +96,7 @@ public class SepExcelUtils {
 	}
 
 	private static <T> Row createRow(LinkedHashMap<String, String> headerMap, T record, int recordIndex, Sheet sheet, int rowIndex,
-			boolean suppressDatumErr, String errPlaceholder) throws DatumException {
+			String datumErrPlaceholder, List<DatumError> dataErrors) {
 		Row row = sheet.createRow(rowIndex);
 		int columnIndex = 0;
 
@@ -96,15 +104,17 @@ public class SepExcelUtils {
 			String propName = entry.getKey();
 			Object propValue = null;
 			try {
+
 				propValue = PropertyUtils.getProperty(record, propName);
 			} catch (Exception e) {
-				if (!suppressDatumErr) {
-					DatumException de = new DatumException(e);
+				if (dataErrors != null) {
+					DatumError de = new DatumError();
 					de.setPropName(propName);
 					de.setRecordIndex(recordIndex);
-					throw de;
+					de.setCause(e);
+					dataErrors.add(de);
 				}
-				propValue = errPlaceholder;
+				propValue = datumErrPlaceholder;
 			}
 			String propValueText = (propValue == null ? null : propValue.toString());
 			createCell(row, columnIndex).setCellValue(StringUtils.defaultString(propValueText));

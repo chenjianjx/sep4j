@@ -1,15 +1,21 @@
 package org.sep4j;
 
+import java.io.Serializable;
 import java.text.MessageFormat;
 
 /**
  * 
- * When this exception is thrown, it means some datum in the records is wrong
+ * some datum in the records is wrong e.g. its value or type does not match the
+ * header
  * 
  * @author chenjianjx
  */
-public class DatumException extends Exception {
-	private static final long serialVersionUID = -6160610503938820467L;
+public class DatumError implements Serializable {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 5587180904535809629L;
 
 	/**
 	 * the datum is of the Nth record. 0-based
@@ -21,25 +27,10 @@ public class DatumException extends Exception {
 	 */
 	private String propName;
 
-	public DatumException() {
-		super();
-
-	}
-
-	public DatumException(String arg0, Throwable arg1) {
-		super(arg0, arg1);
-
-	}
-
-	public DatumException(String arg0) {
-		super(arg0);
-
-	}
-
-	public DatumException(Throwable arg0) {
-		super(arg0);
-
-	}
+	/**
+	 * the cause of the error. It could be null
+	 */
+	private Exception cause;
 
 	public int getRecordIndex() {
 		return recordIndex;
@@ -57,9 +48,17 @@ public class DatumException extends Exception {
 		this.propName = propName;
 	}
 
+	public Exception getCause() {
+		return cause;
+	}
+
+	public void setCause(Exception cause) {
+		this.cause = cause;
+	}
+
 	@Override
 	public String toString() {
-		return MessageFormat.format("recordIndex = {0}, propName = {1}", recordIndex, propName);
+		return MessageFormat.format("recordIndex = {0}, propName = \"{1}\", cause = {2}", recordIndex, propName, cause);
 	}
 
 }
