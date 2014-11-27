@@ -95,7 +95,9 @@ public class SepExcelUtilsTest {
 
 		List<CellError> cellErrors = new ArrayList<CellError>();
 		InputStream inputStream = this.getClass().getResourceAsStream("/sample-excel.xlsx");
-		List<User> records = SepExcelUtils.parse(reverseHeaderMap, inputStream, cellErrors, User.class);
+		//List<User> records = SepExcelUtils.parse(reverseHeaderMap, inputStream, cellErrors, User.class);
+		
+		List<User> records = SepExcelUtils.parseIgnoringErrors(reverseHeaderMap, inputStream, User.class);
 		for (User user : records) {
 			System.out.println(user);
 		}

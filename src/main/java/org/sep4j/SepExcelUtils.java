@@ -41,13 +41,12 @@ public class SepExcelUtils {
 	 *            <propName, headerText>, for example <"username" field of User
 	 *            class, "User Name" as the excel header text>.
 	 * @param records
-	 *            the records to save. Note the element type cannot be a private
-	 *            class
+	 *            the records to save.
 	 * @param outputStream
 	 *            the output stream for the excel
-	 * @throws IOException
+	 * 
 	 */
-	public static <T> void save(LinkedHashMap<String, String> headerMap, Collection<T> records, OutputStream outputStream) throws IOException {
+	public static <T> void save(LinkedHashMap<String, String> headerMap, Collection<T> records, OutputStream outputStream) {
 		save(headerMap, records, outputStream, null, null, true);
 	}
 
@@ -61,18 +60,16 @@ public class SepExcelUtils {
 	 *            "User Name" as the excel header>.
 	 * 
 	 * @param records
-	 *            the records to save. Note the element type cannot be a private
-	 *            class
+	 *            the records to save.
 	 * @param outputStream
 	 *            the output stream for the excel
 	 * @param datumErrPlaceholder
 	 *            if some datum is wrong, write this place holder to the cell
 	 *            (stillSaveIfDataError should be set true)
 	 * 
-	 * @throws IOException
+	 * 
 	 */
-	public static <T> void save(LinkedHashMap<String, String> headerMap, Collection<T> records, OutputStream outputStream, String datumErrPlaceholder)
-			throws IOException {
+	public static <T> void save(LinkedHashMap<String, String> headerMap, Collection<T> records, OutputStream outputStream, String datumErrPlaceholder) {
 		save(headerMap, records, outputStream, datumErrPlaceholder, null, true);
 	}
 
@@ -86,8 +83,7 @@ public class SepExcelUtils {
 	 *            <propName, headerText>, for example <"username" of User class,
 	 *            "User Name" as the excel header>.
 	 * @param records
-	 *            the records to save. Note the element type cannot be a private
-	 *            class
+	 *            the records to save.
 	 * @param outputStream
 	 *            the output stream for the excel
 	 * @param datumErrPlaceholder
@@ -96,10 +92,10 @@ public class SepExcelUtils {
 	 * @param datumErrors
 	 *            all data errors in the records
 	 * 
-	 * @throws IOException
+	 * 
 	 */
 	public static <T> void save(LinkedHashMap<String, String> headerMap, Collection<T> records, OutputStream outputStream,
-			String datumErrPlaceholder, List<DatumError> datumErrors) throws IOException {
+			String datumErrPlaceholder, List<DatumError> datumErrors) {
 		save(headerMap, records, outputStream, datumErrPlaceholder, datumErrors, true);
 	}
 
@@ -113,8 +109,7 @@ public class SepExcelUtils {
 	 *            <propName, headerText>, for example <"username" of User class,
 	 *            "User Name" as the excel header>.
 	 * @param records
-	 *            the records to save. Note the element type cannot be a private
-	 *            class
+	 *            the records to save.
 	 * @param outputStream
 	 *            the output stream for the excel
 	 * @param datumErrPlaceholder
@@ -123,66 +118,64 @@ public class SepExcelUtils {
 	 * @param datumErrors
 	 *            all data errors in the records
 	 * 
-	 * @throws IOException
+	 * 
 	 */
 	public static <T> void saveIfNoDatumError(LinkedHashMap<String, String> headerMap, Collection<T> records, OutputStream outputStream,
-			String datumErrPlaceholder, List<DatumError> datumErrors) throws IOException {
+			String datumErrPlaceholder, List<DatumError> datumErrors) {
 		save(headerMap, records, outputStream, datumErrPlaceholder, datumErrors, false);
 	}
 
 	/**
-	 * save records to a new workbook.
+	 * please check the doc of {@link #parse(Map, InputStream, List, Class)}.
+	 * The difference is that this class ignore any all the errors and make sure
+	 * no checked exception is thrown(There may still be unchecked exceptions,
+	 * though). 
 	 * 
-	 * @param headerMap
-	 *            <propName, headerText>, for example <"username" of User class,
-	 *            "User Name" as the excel header>.
-	 * @param records
-	 *            the records to save. Note the element type cannot be a private
-	 *            class
-	 * @param outputStream
-	 *            the output stream for the excel
-	 * @param datumErrPlaceholder
-	 *            if some datum is wrong, write this place holder to the cell
-	 *            (stillSaveIfDataError should be set true)
-	 * @param datumErrors
-	 *            all data errors in the records
-	 * @param stillSaveIfDataError
-	 *            if there are errors in data, should we still save the records
-	 *            ?
-	 * 
-	 * @throws IOException
+	 * @param reverseHeaderMap
+	 * @param inputStream
+	 * @param recordClass
+	 * @return
 	 */
-	static <T> void save(LinkedHashMap<String, String> headerMap, Collection<T> records, OutputStream outputStream, String datumErrPlaceholder,
-			List<DatumError> datumErrors, boolean stillSaveIfDataError) throws IOException {
-		validateHeaderMap(headerMap);
-
-		if (records == null) {
-			records = new ArrayList<T>();
-		}
-		if (outputStream == null) {
-			throw new IllegalArgumentException("the outputStream can not be null");
-		}
-
-		Workbook wb = new XSSFWorkbook();
-		Sheet sheet = wb.createSheet();
-
-		createHeaders(headerMap, sheet);
-
-		int recordIndex = 0;
-		for (T record : records) {
-			int rowIndex = recordIndex + 1;
-			createRow(headerMap, record, recordIndex, sheet, rowIndex, datumErrPlaceholder, datumErrors);
-			recordIndex++;
+	public static <T> List<T> parseIgnoringErrors(Map<String, String> reverseHeaderMap, InputStream inputStream, Class<T> recordClass) {
+		try {
+			return parse(reverseHeaderMap, inputStream, null, recordClass);
+		} catch (InvalidFormatException e1) {
+			// ignore
+			return new ArrayList<T>();
+		} catch (InvalidHeaderRowException e1) {
+			// ignore
+			return new ArrayList<T>();
 		}
 
-		if (datumErrors != null && datumErrors.size() > 0 && !stillSaveIfDataError) {
-			return;
-		}
-		wb.write(outputStream);
 	}
 
-	static <T> List<T> parse(Map<String, String> reverseHeaderMap, InputStream inputStream, List<CellError> cellErrors, Class<T> recordClass)
-			throws InvalidFormatException, InvalidHeaderRowException, IOException {
+	/**
+	 * parse an excel to a list of beans. <br/>
+	 * The columns are not identified by the column indexes, but by the header
+	 * rows' text of the columns specified by parameter reverseHeaderMap , i.e.
+	 * you don't have to worry which column to put "username". All you need to
+	 * do is to let the excel have a header column named "User Name" and
+	 * associate it with "username" property in parameter reverseHeaderMap
+	 * 
+	 * @param reverseHeaderMap
+	 *            <headerText, propName>, for example <"User Name" as the excel
+	 *            header, "username" of User class>.
+	 * 
+	 * @param inputStream
+	 * @param cellErrors
+	 *            the errors of data rows (not including header row) found while
+	 *            being parsed. The error here can tell you which cell is wrong.
+	 * @param recordClass
+	 *            the class the java bean. It must have a default constructor
+	 * @return a list of beans
+	 * @throws InvalidFormatException
+	 *             the input stream doesn't represent a valid excel
+	 * @throws InvalidHeaderRowException
+	 *             the header row of the excel is not valid, for example, no
+	 *             headerText accords to that of the reverseHeaerMap
+	 */
+	public static <T> List<T> parse(Map<String, String> reverseHeaderMap, InputStream inputStream, List<CellError> cellErrors, Class<T> recordClass)
+			throws InvalidFormatException, InvalidHeaderRowException {
 		if (reverseHeaderMap == null || reverseHeaderMap.isEmpty()) {
 			throw new IllegalArgumentException("the reverseHeaderMap can not be null or empty");
 		}
@@ -203,7 +196,7 @@ public class SepExcelUtils {
 			columnIndex++;
 		}
 
-		Workbook workbook = WorkbookFactory.create(inputStream);
+		Workbook workbook = toWorkbook(inputStream);
 		if (workbook.getNumberOfSheets() <= 0) {
 			return new ArrayList<T>();
 		}
@@ -230,11 +223,61 @@ public class SepExcelUtils {
 		return records;
 	}
 
+	/**
+	 * save records to a new workbook.
+	 * 
+	 * @param headerMap
+	 *            <propName, headerText>, for example <"username" of User class,
+	 *            "User Name" as the excel header>.
+	 * @param records
+	 *            the records to save.
+	 * @param outputStream
+	 *            the output stream for the excel
+	 * @param datumErrPlaceholder
+	 *            if some datum is wrong, write this place holder to the cell
+	 *            (stillSaveIfDataError should be set true)
+	 * @param datumErrors
+	 *            all data errors in the records
+	 * @param stillSaveIfDataError
+	 *            if there are errors in data, should we still save the records
+	 *            ?
+	 * 
+	 * 
+	 */
+	static <T> void save(LinkedHashMap<String, String> headerMap, Collection<T> records, OutputStream outputStream, String datumErrPlaceholder,
+			List<DatumError> datumErrors, boolean stillSaveIfDataError) {
+		validateHeaderMap(headerMap);
+
+		if (records == null) {
+			records = new ArrayList<T>();
+		}
+		if (outputStream == null) {
+			throw new IllegalArgumentException("the outputStream can not be null");
+		}
+
+		Workbook wb = new XSSFWorkbook();
+		Sheet sheet = wb.createSheet();
+
+		createHeaders(headerMap, sheet);
+
+		int recordIndex = 0;
+		for (T record : records) {
+			int rowIndex = recordIndex + 1;
+			createRow(headerMap, record, recordIndex, sheet, rowIndex, datumErrPlaceholder, datumErrors);
+			recordIndex++;
+		}
+
+		if (datumErrors != null && datumErrors.size() > 0 && !stillSaveIfDataError) {
+			return;
+		}
+		writeWorkbook(wb, outputStream);
+	}
+
 	private static <T> T parseDataRow(Map<Short, ColumnMeta> columnMetaMap, Row row, int rowIndex, Class<T> recordClass, List<CellError> cellErrors) {
 		T record = newInstance(recordClass);
 
 		for (short columnIndex = 0; columnIndex < row.getLastCellNum(); columnIndex++) {
-			ColumnMeta columnMeta = columnMetaMap.get(columnIndex);			
+			ColumnMeta columnMeta = columnMetaMap.get(columnIndex);
 			if (columnMeta == null || columnMeta.propName == null) {
 				continue;
 			}
@@ -426,5 +469,21 @@ public class SepExcelUtils {
 	private static Cell createCell(Row row, int columnIndex) {
 		Cell cell = row.createCell(columnIndex);
 		return cell;
+	}
+
+	private static void writeWorkbook(Workbook workbook, OutputStream outputStream) {
+		try {
+			workbook.write(outputStream);
+		} catch (IOException e) {
+			throw new IllegalStateException(e);
+		}
+	}
+
+	private static Workbook toWorkbook(InputStream inputStream) throws InvalidFormatException {
+		try {
+			return WorkbookFactory.create(inputStream);
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
 	}
 }
