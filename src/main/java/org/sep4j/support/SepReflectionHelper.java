@@ -10,7 +10,8 @@ import org.apache.commons.lang.StringUtils;
 
 /**
  * help with reflection. commons-beanutils have too many limitations (for
- * example, accessing properties of a private internal class). So we write this.
+ * example, accessing properties of a private internal class is not supported).
+ * So we write this.
  * 
  * @author chenjianjx
  */
@@ -104,20 +105,25 @@ public class SepReflectionHelper {
 	}
 
 	private static Method findGetterByPropName(Class<?> clazz, String propName) {
-		Method get = findGet(clazz, propName);
+		Method get = findGetLiterally(clazz, propName);
 		if (get != null) {
 			return get;
 		}
-
-		Method is = findIsReturningPrimitiveBoolean(clazz, propName);
+		Method is = findIsLiterallyForBoolean(clazz, propName);
 		if (is != null) {
 			return is;
 		}
-
 		return null;
 	}
 
-	private static Method findIsReturningPrimitiveBoolean(Class<?> clazz, String propName) {
+	/**
+	 * find a getter method for primitive boolean
+	 * 
+	 * @param clazz
+	 * @param propName
+	 * @return
+	 */
+	static Method findIsLiterallyForBoolean(Class<?> clazz, String propName) {
 		try {
 			Method is = clazz.getMethod("is" + StringUtils.capitalize(propName), new Class<?>[0]);
 			if (is.getReturnType().equals(boolean.class)) {
@@ -131,7 +137,14 @@ public class SepReflectionHelper {
 		}
 	}
 
-	private static Method findGet(Class<?> clazz, String propName) {
+	/**
+	 * find a getter method which starts "get"
+	 * 
+	 * @param clazz
+	 * @param propName
+	 * @return
+	 */
+	static Method findGetLiterally(Class<?> clazz, String propName) {
 		try {
 			return clazz.getMethod("get" + StringUtils.capitalize(propName), new Class<?>[0]);
 		} catch (SecurityException e) {

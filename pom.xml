@@ -4,7 +4,7 @@
 	<groupId>org.sep4j</groupId>
 	<artifactId>sep4j</artifactId>
 	<packaging>jar</packaging>
-	<version>1.0-beta-03</version>
+	<version>1.0-beta-04</version>
 	<name>Simple Excel Processing for Java</name>
 	<url>http://maven.apache.org</url>
 

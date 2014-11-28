@@ -4,6 +4,8 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * 
@@ -55,7 +57,12 @@ public class SepBasicTypeConverts {
 		if (typeMeta == null) {
 			return false;
 		}
-		return typeMeta.canFromThisString(str);
+		try {
+			typeMeta.fromThisString(str);
+			return true;
+		} catch (RuntimeException e) {
+			return false;
+		}
 	}
 
 	/**
@@ -64,7 +71,8 @@ public class SepBasicTypeConverts {
 	 * 
 	 * @param str
 	 * @param targetType
-	 * @return
+	 * @return Note "null" doesn't mean anything wrong. if it returns null, then
+	 *         null is the value you are looking for.
 	 */
 	public static Object fromThisString(String str, Class<?> targetType) {
 		if (!canFromThisString(str, targetType)) {
@@ -81,8 +89,6 @@ public class SepBasicTypeConverts {
 	 */
 	private static interface CanFromStringTypeMeta {
 
-		public static final String ERR_PARSE_WITHOUT_ACCESS = "Please call fromThisString(String str) first to confirm";
-
 		/**
 		 * the type
 		 * 
@@ -91,23 +97,16 @@ public class SepBasicTypeConverts {
 		public Class<?> getType();
 
 		/**
-		 * can it be parsed from this string?
-		 * 
-		 * @param str
-		 * @return
-		 */
-		public boolean canFromThisString(String str);
-
-		/**
-		 * parse from this string. You need to call
-		 * {@link #canFromThisString(String)} first.
+		 * parse from this string.
 		 * 
 		 * @param str
 		 * @return Note "null" doesn't mean anything wrong. if it returns null,
 		 *         then null is the value you are looking for.
-		 * @throws IllegalArgumentException
+		 * @throws RuntimeException
+		 *             If an exception is thrown, it means this string cannot be
+		 *             parsed
 		 */
-		public Object fromThisString(String str) throws IllegalArgumentException;
+		public Object fromThisString(String str) throws RuntimeException;
 	}
 
 	private static class ShortType implements CanFromStringTypeMeta {
@@ -116,22 +115,8 @@ public class SepBasicTypeConverts {
 			return short.class;
 		}
 
-		public boolean canFromThisString(String str) {
-			if (str == null) {
-				return false;
-			}
-			try {
-				Short.parseShort(str);
-				return true;
-			} catch (NumberFormatException nfe) {
-				return false;
-			}
-		}
-
 		public Object fromThisString(String str) {
-			if (!canFromThisString(str)) {
-				throw new IllegalArgumentException(ERR_PARSE_WITHOUT_ACCESS);
-			}
+			str = retainWholeIfDecimalPartZero(str);
 			return Short.parseShort(str);
 		}
 
@@ -143,22 +128,8 @@ public class SepBasicTypeConverts {
 			return int.class;
 		}
 
-		public boolean canFromThisString(String str) {
-			if (str == null) {
-				return false;
-			}
-			try {
-				Integer.parseInt(str);
-				return true;
-			} catch (NumberFormatException nfe) {
-				return false;
-			}
-		}
-
 		public Object fromThisString(String str) {
-			if (!canFromThisString(str)) {
-				throw new IllegalArgumentException(ERR_PARSE_WITHOUT_ACCESS);
-			}
+			str = retainWholeIfDecimalPartZero(str);
 			return Integer.parseInt(str);
 		}
 
@@ -170,22 +141,8 @@ public class SepBasicTypeConverts {
 			return long.class;
 		}
 
-		public boolean canFromThisString(String str) {
-			if (str == null) {
-				return false;
-			}
-			try {
-				Long.parseLong(str);
-				return true;
-			} catch (NumberFormatException nfe) {
-				return false;
-			}
-		}
-
 		public Object fromThisString(String str) {
-			if (!canFromThisString(str)) {
-				throw new IllegalArgumentException(ERR_PARSE_WITHOUT_ACCESS);
-			}
+			str = retainWholeIfDecimalPartZero(str);
 			return Long.parseLong(str);
 		}
 
@@ -197,22 +154,7 @@ public class SepBasicTypeConverts {
 			return float.class;
 		}
 
-		public boolean canFromThisString(String str) {
-			if (str == null) {
-				return false;
-			}
-			try {
-				Float.parseFloat(str);
-				return true;
-			} catch (NumberFormatException nfe) {
-				return false;
-			}
-		}
-
 		public Object fromThisString(String str) {
-			if (!canFromThisString(str)) {
-				throw new IllegalArgumentException(ERR_PARSE_WITHOUT_ACCESS);
-			}
 			return Float.parseFloat(str);
 		}
 
@@ -224,22 +166,7 @@ public class SepBasicTypeConverts {
 			return double.class;
 		}
 
-		public boolean canFromThisString(String str) {
-			if (str == null) {
-				return false;
-			}
-			try {
-				Double.parseDouble(str);
-				return true;
-			} catch (NumberFormatException nfe) {
-				return false;
-			}
-		}
-
 		public Object fromThisString(String str) {
-			if (!canFromThisString(str)) {
-				throw new IllegalArgumentException(ERR_PARSE_WITHOUT_ACCESS);
-			}
 			return Double.parseDouble(str);
 		}
 
@@ -251,22 +178,11 @@ public class SepBasicTypeConverts {
 			return boolean.class;
 		}
 
-		public boolean canFromThisString(String str) {
-			if (str == null) {
-				return false;
-			}
-			try {
-				Boolean.parseBoolean(str);
-				return true;
-			} catch (NumberFormatException nfe) {
-				return false;
-			}
-		}
-
 		public Object fromThisString(String str) {
-			if (!canFromThisString(str)) {
-				throw new IllegalArgumentException(ERR_PARSE_WITHOUT_ACCESS);
+			if(str == null){
+				throw new IllegalArgumentException("don't take null for primitive boolean type");
 			}
+
 			return Boolean.parseBoolean(str);
 		}
 	}
@@ -277,25 +193,12 @@ public class SepBasicTypeConverts {
 			return Short.class;
 		}
 
-		public boolean canFromThisString(String str) {
-			if (str == null) {
-				return true;
-			}
-			try {
-				Short.valueOf(str);
-				return true;
-			} catch (NumberFormatException nfe) {
-				return false;
-			}
-		}
-
 		public Object fromThisString(String str) {
-			if (!canFromThisString(str)) {
-				throw new IllegalArgumentException(ERR_PARSE_WITHOUT_ACCESS);
-			}
+
 			if (str == null) {
 				return null;
 			}
+			str = retainWholeIfDecimalPartZero(str);
 			return Short.valueOf(str);
 		}
 
@@ -307,25 +210,11 @@ public class SepBasicTypeConverts {
 			return Integer.class;
 		}
 
-		public boolean canFromThisString(String str) {
-			if (str == null) {
-				return true;
-			}
-			try {
-				Integer.valueOf(str);
-				return true;
-			} catch (NumberFormatException nfe) {
-				return false;
-			}
-		}
-
 		public Object fromThisString(String str) {
-			if (!canFromThisString(str)) {
-				throw new IllegalArgumentException(ERR_PARSE_WITHOUT_ACCESS);
-			}
 			if (str == null) {
 				return null;
 			}
+			str = retainWholeIfDecimalPartZero(str);
 			return Integer.valueOf(str);
 		}
 
@@ -337,25 +226,11 @@ public class SepBasicTypeConverts {
 			return Long.class;
 		}
 
-		public boolean canFromThisString(String str) {
-			if (str == null) {
-				return true;
-			}
-			try {
-				Long.valueOf(str);
-				return true;
-			} catch (NumberFormatException nfe) {
-				return false;
-			}
-		}
-
 		public Object fromThisString(String str) {
-			if (!canFromThisString(str)) {
-				throw new IllegalArgumentException(ERR_PARSE_WITHOUT_ACCESS);
-			}
 			if (str == null) {
 				return null;
 			}
+			str = retainWholeIfDecimalPartZero(str);
 			return Long.valueOf(str);
 		}
 
@@ -367,22 +242,7 @@ public class SepBasicTypeConverts {
 			return Float.class;
 		}
 
-		public boolean canFromThisString(String str) {
-			if (str == null) {
-				return true;
-			}
-			try {
-				Float.valueOf(str);
-				return true;
-			} catch (NumberFormatException nfe) {
-				return false;
-			}
-		}
-
 		public Object fromThisString(String str) {
-			if (!canFromThisString(str)) {
-				throw new IllegalArgumentException(ERR_PARSE_WITHOUT_ACCESS);
-			}
 			if (str == null) {
 				return null;
 			}
@@ -397,22 +257,7 @@ public class SepBasicTypeConverts {
 			return Double.class;
 		}
 
-		public boolean canFromThisString(String str) {
-			if (str == null) {
-				return true;
-			}
-			try {
-				Double.valueOf(str);
-				return true;
-			} catch (NumberFormatException nfe) {
-				return false;
-			}
-		}
-
 		public Object fromThisString(String str) {
-			if (!canFromThisString(str)) {
-				throw new IllegalArgumentException(ERR_PARSE_WITHOUT_ACCESS);
-			}
 			if (str == null) {
 				return null;
 			}
@@ -427,22 +272,7 @@ public class SepBasicTypeConverts {
 			return Boolean.class;
 		}
 
-		public boolean canFromThisString(String str) {
-			if (str == null) {
-				return true;
-			}
-			try {
-				Boolean.valueOf(str);
-				return true;
-			} catch (NumberFormatException nfe) {
-				return false;
-			}
-		}
-
 		public Object fromThisString(String str) {
-			if (!canFromThisString(str)) {
-				throw new IllegalArgumentException(ERR_PARSE_WITHOUT_ACCESS);
-			}
 			if (str == null) {
 				return null;
 			}
@@ -457,25 +287,11 @@ public class SepBasicTypeConverts {
 			return BigInteger.class;
 		}
 
-		public boolean canFromThisString(String str) {
-			if (str == null) {
-				return true;
-			}
-			try {
-				new BigInteger(str);
-				return true;
-			} catch (NumberFormatException nfe) {
-				return false;
-			}
-		}
-
 		public Object fromThisString(String str) {
-			if (!canFromThisString(str)) {
-				throw new IllegalArgumentException(ERR_PARSE_WITHOUT_ACCESS);
-			}
 			if (str == null) {
 				return null;
 			}
+			str = retainWholeIfDecimalPartZero(str);
 			return new BigInteger(str);
 		}
 
@@ -487,22 +303,7 @@ public class SepBasicTypeConverts {
 			return BigDecimal.class;
 		}
 
-		public boolean canFromThisString(String str) {
-			if (str == null) {
-				return true;
-			}
-			try {
-				new BigDecimal(str);
-				return true;
-			} catch (NumberFormatException nfe) {
-				return false;
-			}
-		}
-
 		public Object fromThisString(String str) {
-			if (!canFromThisString(str)) {
-				throw new IllegalArgumentException(ERR_PARSE_WITHOUT_ACCESS);
-			}
 			if (str == null) {
 				return null;
 			}
@@ -517,14 +318,34 @@ public class SepBasicTypeConverts {
 			return String.class;
 		}
 
-		public boolean canFromThisString(String str) {
-			return true;
-		}
-
 		public Object fromThisString(String str) {
 			return str;
 		}
 
+	}
+
+	/**
+	 * get the whole number part if the string is numeric and the decimal part
+	 * is zero <br/>
+	 * i.e. null => null<br/>
+	 * "3.00" => "3"<br/>
+	 * "3.02" => "3.02" <br/>
+	 * "3" =>"3"
+	 * 
+	 * @param s
+	 * @return
+	 */
+	static String retainWholeIfDecimalPartZero(String s) {
+		if (s == null) {
+			return s;
+		}
+
+		Pattern pattern = Pattern.compile("^(\\d+)\\.0*$");
+		Matcher matcher = pattern.matcher(s);
+		if (matcher.find()) {
+			return matcher.group(1);
+		}
+		return s;
 	}
 
 }
