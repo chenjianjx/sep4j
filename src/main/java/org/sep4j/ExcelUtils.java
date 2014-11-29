@@ -20,6 +20,7 @@ import org.apache.poi.hssf.usermodel.HSSFCellStyle;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -36,7 +37,7 @@ import org.sep4j.support.SepReflectionHelper;
  * 
  * 
  */
-public class SepExcelUtils {
+public class ExcelUtils {
 
 	/**
 	 * save records to a new workbook even if there are datum errors in the
@@ -318,7 +319,41 @@ public class SepExcelUtils {
 		}
 	}
 
-	static <T> void setPropertyWithCellText(Class<T> recordClass, T record, String propName, String cellText) {
+	static <T> void setPropertyWithCellText(Class<T> recordClass, T record, String propName, Object cellStringOrDate) {
+		IllegalArgumentException noSetterException = new IllegalArgumentException(MessageFormat.format(
+				"No suitable setter for property \"{0}\" with cellValue \"{1}\" ", propName, cellStringOrDate));
+		List<Method> setters = SepReflectionHelper.findSettersByPropName(recordClass, propName);
+
+		//no setter for this prop
+		if (setters.isEmpty()) {
+			throw noSetterException;
+		}
+
+		if (cellStringOrDate == null) {
+			// in this case, try all the setters one by one
+			for (Method setter : setters) {
+				Class<?> propClass = setter.getParameterTypes()[0];
+				if (SepBasicTypeConverts.canFromNull(propClass)) {					
+					SepReflectionHelper.invokeSetter(setter, record, null);
+					return;
+				}
+			}
+			throw noSetterException;
+		}
+
+		if (cellStringOrDate instanceof java.util.Date) {
+			Method setter = SepReflectionHelper.findSetterByPropNameAndType(recordClass, propName, java.util.Date.class);
+			if (setter == null) {
+				throw noSetterException;
+			} else {
+				SepReflectionHelper.invokeSetter(setter, record, cellStringOrDate);
+				return;
+			}
+		}
+
+		// ok, we got a string
+		String cellText = (String) cellStringOrDate;
+
 		// try to find a string-type setter first
 		Method stringSetter = SepReflectionHelper.findSetterByPropNameAndType(recordClass, propName, String.class);
 		if (stringSetter != null) {
@@ -327,7 +362,7 @@ public class SepExcelUtils {
 		}
 
 		// no string-type setter? do a guess!
-		List<Method> setters = SepReflectionHelper.findSettersByPropName(recordClass, propName);
+
 		for (Method setter : setters) {
 			Class<?> propClass = setter.getParameterTypes()[0];
 			if (SepBasicTypeConverts.canFromThisString(cellText, propClass)) {
@@ -337,7 +372,7 @@ public class SepExcelUtils {
 			}
 		}
 
-		throw new IllegalArgumentException(MessageFormat.format("No suitable setter for property \"{0}\" with cellText \"{1}\" ", propName, cellText));
+		throw noSetterException;
 	}
 
 	static <T> T createRecordInstance(Class<T> recordClass) {
@@ -357,13 +392,16 @@ public class SepExcelUtils {
 	}
 
 	/**
-	 * read the cell's string value no matter what type the cell is of. Actually
-	 * it only supports 3 types: string, numeric and boolean.
+	 * read the cell. it only supports: boolean, numeric, date(numeric cell type
+	 * + date cell format) and string.
 	 * 
 	 * @param cell
-	 * @return the string representation of the cell (will be trimmed to null)
+	 * @return the date if it is a date cell, or else the string value (will be
+	 *         trimmed to null) . <br/>
+	 * 
+	 * 
 	 */
-	static String readCellAsString(Cell cell) {
+	static Object readCellAsStringOrDate(Cell cell) {
 		if (cell == null) {
 			return null;
 		}
@@ -385,8 +423,12 @@ public class SepExcelUtils {
 		}
 
 		if (cell.getCellType() == Cell.CELL_TYPE_NUMERIC) {
-			double v = cell.getNumericCellValue();
-			return String.valueOf(v);
+			if (DateUtil.isCellDateFormatted(cell)) {
+				return cell.getDateCellValue();
+			} else {
+				double v = cell.getNumericCellValue();
+				return String.valueOf(v);
+			}
 		}
 
 		if (cell.getCellType() == Cell.CELL_TYPE_STRING) {
@@ -407,9 +449,9 @@ public class SepExcelUtils {
 			}
 			String propName = columnMeta.propName;
 			Cell cell = row.getCell(columnIndex);
-			String cellText = readCellAsString(cell);
+			Object cellStringOrDate = readCellAsStringOrDate(cell);
 			try {
-				setPropertyWithCellText(recordClass, record, propName, cellText);
+				setPropertyWithCellText(recordClass, record, propName, cellStringOrDate);
 			} catch (Exception e) {
 				if (cellErrors != null) {
 					CellError ce = new CellError();
@@ -454,7 +496,8 @@ public class SepExcelUtils {
 		// note that row.getLastCellNum() is one-based
 		for (short columnIndex = 0; columnIndex < row.getLastCellNum(); columnIndex++) {
 			Cell cell = row.getCell(columnIndex);
-			String headerText = readCellAsString(cell);
+			Object headerObj = readCellAsStringOrDate(cell);
+			String headerText = headerObj == null ? "" : headerObj.toString();
 			if (headerText == null) {
 				continue;
 			}

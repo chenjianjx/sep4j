@@ -16,11 +16,27 @@ import java.util.regex.Pattern;
 public class SepBasicTypeConverts {
 
 	private static final Map<Class<?>, CanFromStringTypeMeta> CanFromStringTypeMetas = new LinkedHashMap<Class<?>, CanFromStringTypeMeta>();
+	private static final Map<Class<?>, CanFromNullTypeMeta> CanFromNullTypeMetas = new LinkedHashMap<Class<?>, CanFromNullTypeMeta>();
+
 	static {
 		init();
 	}
 
+	//TODO: replace them with singletons
 	private static void init() {
+		// can from null
+		addCanFromNullTypeMeta(new ShortObjectType());
+		addCanFromNullTypeMeta(new IntegerObjectType());
+		addCanFromNullTypeMeta(new LongObjectType());
+		addCanFromNullTypeMeta(new FloatObjectType());
+		addCanFromNullTypeMeta(new DoubleObjectType());
+		addCanFromNullTypeMeta(new BooleanObjectType());
+		addCanFromNullTypeMeta(new BigIntegerType());
+		addCanFromNullTypeMeta(new BigDecimalType());
+		addCanFromNullTypeMeta(new StringType());
+		addCanFromNullTypeMeta(new DateType());
+
+		// can from string
 		addCanFromStringTypeMeta(new ShortType());
 		addCanFromStringTypeMeta(new IntType());
 		addCanFromStringTypeMeta(new LongType());
@@ -43,6 +59,22 @@ public class SepBasicTypeConverts {
 
 	private static void addCanFromStringTypeMeta(CanFromStringTypeMeta meta) {
 		CanFromStringTypeMetas.put(meta.getType(), meta);
+	}
+
+	private static void addCanFromNullTypeMeta(CanFromNullTypeMeta meta) {
+		CanFromNullTypeMetas.put(meta.getType(), meta);
+	}
+
+	/**
+	 * can this type take null?
+	 * 
+	 * @param str
+	 * @param targetType
+	 * @return
+	 */
+	public static boolean canFromNull(Class<?> targetType) {
+		CanFromNullTypeMeta typeMeta = CanFromNullTypeMetas.get(targetType);
+		return typeMeta != null;
 	}
 
 	/**
@@ -82,19 +114,30 @@ public class SepBasicTypeConverts {
 		return typeMeta.fromThisString(str);
 	}
 
-	/**
-	 * a wrapper for types that can be parsed from a string
-	 * 
-	 * 
-	 */
-	private static interface CanFromStringTypeMeta {
-
+	private static interface BasicType {
 		/**
 		 * the type
 		 * 
 		 * @return
 		 */
 		public Class<?> getType();
+	}
+
+	/**
+	 * 
+	 * a wrapper for types that can take null as its value
+	 * 
+	 */
+	private static interface CanFromNullTypeMeta extends BasicType {
+
+	}
+
+	/**
+	 * a wrapper for types that can be parsed from a string
+	 * 
+	 * 
+	 */
+	private static interface CanFromStringTypeMeta extends BasicType {
 
 		/**
 		 * parse from this string.
@@ -187,7 +230,7 @@ public class SepBasicTypeConverts {
 		}
 	}
 
-	private static class ShortObjectType implements CanFromStringTypeMeta {
+	private static class ShortObjectType implements CanFromStringTypeMeta, CanFromNullTypeMeta {
 
 		public Class<?> getType() {
 			return Short.class;
@@ -204,7 +247,7 @@ public class SepBasicTypeConverts {
 
 	}
 
-	private static class IntegerObjectType implements CanFromStringTypeMeta {
+	private static class IntegerObjectType implements CanFromStringTypeMeta, CanFromNullTypeMeta {
 
 		public Class<?> getType() {
 			return Integer.class;
@@ -220,7 +263,7 @@ public class SepBasicTypeConverts {
 
 	}
 
-	private static class LongObjectType implements CanFromStringTypeMeta {
+	private static class LongObjectType implements CanFromStringTypeMeta, CanFromNullTypeMeta {
 
 		public Class<?> getType() {
 			return Long.class;
@@ -236,7 +279,7 @@ public class SepBasicTypeConverts {
 
 	}
 
-	private static class FloatObjectType implements CanFromStringTypeMeta {
+	private static class FloatObjectType implements CanFromStringTypeMeta, CanFromNullTypeMeta {
 
 		public Class<?> getType() {
 			return Float.class;
@@ -251,7 +294,7 @@ public class SepBasicTypeConverts {
 
 	}
 
-	private static class DoubleObjectType implements CanFromStringTypeMeta {
+	private static class DoubleObjectType implements CanFromStringTypeMeta, CanFromNullTypeMeta {
 
 		public Class<?> getType() {
 			return Double.class;
@@ -266,7 +309,7 @@ public class SepBasicTypeConverts {
 
 	}
 
-	private static class BooleanObjectType implements CanFromStringTypeMeta {
+	private static class BooleanObjectType implements CanFromStringTypeMeta, CanFromNullTypeMeta {
 
 		public Class<?> getType() {
 			return Boolean.class;
@@ -281,7 +324,7 @@ public class SepBasicTypeConverts {
 
 	}
 
-	private static class BigIntegerType implements CanFromStringTypeMeta {
+	private static class BigIntegerType implements CanFromStringTypeMeta, CanFromNullTypeMeta {
 
 		public Class<?> getType() {
 			return BigInteger.class;
@@ -297,7 +340,7 @@ public class SepBasicTypeConverts {
 
 	}
 
-	private static class BigDecimalType implements CanFromStringTypeMeta {
+	private static class BigDecimalType implements CanFromStringTypeMeta, CanFromNullTypeMeta {
 
 		public Class<?> getType() {
 			return BigDecimal.class;
@@ -312,7 +355,7 @@ public class SepBasicTypeConverts {
 
 	}
 
-	private static class StringType implements CanFromStringTypeMeta {
+	private static class StringType implements CanFromStringTypeMeta, CanFromNullTypeMeta {
 
 		public Class<?> getType() {
 			return String.class;
@@ -320,6 +363,13 @@ public class SepBasicTypeConverts {
 
 		public Object fromThisString(String str) {
 			return str;
+		}
+
+	}
+
+	private static class DateType implements CanFromNullTypeMeta {
+		public Class<?> getType() {
+			return java.util.Date.class;
 		}
 
 	}

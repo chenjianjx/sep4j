@@ -40,7 +40,7 @@ import org.junit.rules.ExpectedException;
  * 
  */
 
-public class SepExcelUtilsIntegrationTest {
+public class ExcelUtilsIntegrationTest {
 
 	@Rule
 	public ExpectedException expectedEx = ExpectedException.none();
@@ -57,7 +57,7 @@ public class SepExcelUtilsIntegrationTest {
 		List<DatumError> datumErrors = new ArrayList<DatumError>();
 
 		// save it
-		SepExcelUtils.saveIfNoDatumError(headerMap, records, outputStream, null, datumErrors);
+		ExcelUtils.saveIfNoDatumError(headerMap, records, outputStream, null, datumErrors);
 
 		byte[] excel = outputStream.toByteArray();
 		Assert.assertEquals(0, excel.length);
@@ -80,7 +80,7 @@ public class SepExcelUtilsIntegrationTest {
 		List<DatumError> datumErrors = new ArrayList<DatumError>();
 
 		// save it
-		SepExcelUtils.save(headerMap, records, outputStream, datumErrPlaceholder, datumErrors);
+		ExcelUtils.save(headerMap, records, outputStream, datumErrPlaceholder, datumErrors);
 		byte[] excel = outputStream.toByteArray();
 
 		// do a save for human eye check
@@ -136,7 +136,7 @@ public class SepExcelUtilsIntegrationTest {
 		Collection<ITRecord> records = Arrays.asList(record);
 		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 		// save it
-		SepExcelUtils.save(headerMap, records, outputStream);
+		ExcelUtils.save(headerMap, records, outputStream);
 		byte[] excel = outputStream.toByteArray();
 
 		// do a save for human eye check
@@ -174,7 +174,7 @@ public class SepExcelUtilsIntegrationTest {
 
 		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 		// save it
-		SepExcelUtils.save(ITRecord.getHeaderMap(), null, outputStream);
+		ExcelUtils.save(ITRecord.getHeaderMap(), null, outputStream);
 		byte[] excel = outputStream.toByteArray();
 
 		// do a save for human eye check
@@ -210,7 +210,7 @@ public class SepExcelUtilsIntegrationTest {
 		List<DatumError> datumErrors = new ArrayList<DatumError>();
 
 		// save it
-		SepExcelUtils.save(headerMap, records, outputStream, null, datumErrors);
+		ExcelUtils.save(headerMap, records, outputStream, null, datumErrors);
 		byte[] excel = outputStream.toByteArray();
 
 		// do a save for human eye check
@@ -238,13 +238,13 @@ public class SepExcelUtilsIntegrationTest {
 	@Test(expected = InvalidHeaderRowException.class)
 	public void parseTest_InvalidHeader() throws InvalidFormatException, InvalidHeaderRowException {
 		ByteArrayInputStream in = toByteArrayInputStreamAndClose(this.getClass().getResourceAsStream("/parse-test-all-headers-wrong.xlsx"));
-		SepExcelUtils.parse(ITRecord.getReverseHeaderMap(), in, null, ITRecord.class);
+		ExcelUtils.parse(ITRecord.getReverseHeaderMap(), in, null, ITRecord.class);
 	}
 
 	@Test
 	public void parseTest_Excel97() throws InvalidFormatException, InvalidHeaderRowException {
 		ByteArrayInputStream in = toByteArrayInputStreamAndClose(this.getClass().getResourceAsStream("/parse-test-excel97.xls"));
-		List<ITRecord> list = SepExcelUtils.parse(ITRecord.getReverseHeaderMap(), in, null, ITRecord.class);
+		List<ITRecord> list = ExcelUtils.parse(ITRecord.getReverseHeaderMap(), in, null, ITRecord.class);
 		Assert.assertEquals((short) 1, list.get(0).getPrimShort());
 	}
 
@@ -252,7 +252,7 @@ public class SepExcelUtilsIntegrationTest {
 	public void parseTest_DataHalfCorrect() throws InvalidFormatException, InvalidHeaderRowException {
 		ByteArrayInputStream in = toByteArrayInputStreamAndClose(this.getClass().getResourceAsStream("/parse-test-data-half-correct.xlsx"));
 		List<CellError> cellErrors = new ArrayList<CellError>();
-		List<ITRecord> records = SepExcelUtils.parse(ITRecord.getReverseHeaderMap(), in, cellErrors, ITRecord.class);
+		List<ITRecord> records = ExcelUtils.parse(ITRecord.getReverseHeaderMap(), in, cellErrors, ITRecord.class);
 
 		ITRecord record = records.get(0);
 		Assert.assertEquals(1, records.size());
@@ -270,7 +270,7 @@ public class SepExcelUtilsIntegrationTest {
 	public void parseTest_AllStringCells() throws InvalidFormatException, InvalidHeaderRowException {
 		ByteArrayInputStream in = toByteArrayInputStreamAndClose(this.getClass().getResourceAsStream("/parse-test-all-string-cells-input.xlsx"));
 		List<CellError> cellErrors = new ArrayList<CellError>();
-		List<ITRecord> records = SepExcelUtils.parse(ITRecord.getReverseHeaderMap(), in, cellErrors, ITRecord.class);
+		List<ITRecord> records = ExcelUtils.parse(ITRecord.getReverseHeaderMap(), in, cellErrors, ITRecord.class);
 
 		// assertions
 		ITRecord record = records.get(0);
@@ -302,7 +302,7 @@ public class SepExcelUtilsIntegrationTest {
 	public void parseTest_FreeTypeCells() throws InvalidFormatException, InvalidHeaderRowException {
 		ByteArrayInputStream in = toByteArrayInputStreamAndClose(this.getClass().getResourceAsStream("/parse-test-all-free-type-input.xlsx"));
 		List<CellError> cellErrors = new ArrayList<CellError>();
-		List<ITRecord> records = SepExcelUtils.parse(ITRecord.getReverseHeaderMap(), in, cellErrors, ITRecord.class);
+		List<ITRecord> records = ExcelUtils.parse(ITRecord.getReverseHeaderMap(), in, cellErrors, ITRecord.class);
 
 		// assertions
 		ITRecord record = records.get(0);
@@ -328,8 +328,7 @@ public class SepExcelUtilsIntegrationTest {
 		Assert.assertEquals(new BigInteger("123456789123456000"), record.getBigInteger());
 		Assert.assertEquals(123456789, record.getBigDecimal().intValue());
 		Assert.assertEquals("abc", record.getStr());
-		// Assert.assertEquals("2014-11-29 16:18:47", record.getDateStr());
-		// FIXME: let's support date type some day
+		Assert.assertEquals("2014-11-29 16:18:47", record.getDateStr());
 
 	}
 
@@ -404,7 +403,10 @@ public class SepExcelUtilsIntegrationTest {
 		}
 
 		public static Map<String, String> getReverseHeaderMap() {
-			return reverse(headerMap);
+			LinkedHashMap<String, String> map = reverse(headerMap);
+			map.remove("Date String");
+			map.put("Date", "date");
+			return map;
 		}
 
 		public Date getDate() {
@@ -422,7 +424,7 @@ public class SepExcelUtilsIntegrationTest {
 			return DateFormatUtils.format(date, "yyyy-MM-dd HH:mm:ss");
 		}
 
-		public void setDateStr(String s) {
+		public void setDate(String s) {
 			if (s == null) {
 				return;
 			}
