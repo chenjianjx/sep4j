@@ -143,10 +143,10 @@ public class ExcelUtilsTest {
 	public void setPropertyWithCellTextTest_StrProp() {
 		UTRecord record = new UTRecord();
 
-		ExcelUtils.setPropertyWithCellText(UTRecord.class, record, "strProp", "abc");
+		ExcelUtils.setPropertyWithCellValue(UTRecord.class, record, "strProp", "abc");
 		Assert.assertEquals("abc", record.getStrProp());
 
-		ExcelUtils.setPropertyWithCellText(UTRecord.class, record, "strProp", null);
+		ExcelUtils.setPropertyWithCellValue(UTRecord.class, record, "strProp", null);
 		Assert.assertNull(record.getStrProp());
 	}
 
@@ -154,10 +154,10 @@ public class ExcelUtilsTest {
 	public void setPropertyWithCellTextTest_IntObjProp() {
 		UTRecord record = new UTRecord();
 
-		ExcelUtils.setPropertyWithCellText(UTRecord.class, record, "intObjProp", "123");
+		ExcelUtils.setPropertyWithCellValue(UTRecord.class, record, "intObjProp", "123");
 		Assert.assertEquals(new Integer(123), record.getIntObjProp());
 
-		ExcelUtils.setPropertyWithCellText(UTRecord.class, record, "intObjProp", null);
+		ExcelUtils.setPropertyWithCellValue(UTRecord.class, record, "intObjProp", null);
 		Assert.assertNull(record.getIntObjProp());
 
 	}
@@ -168,7 +168,7 @@ public class ExcelUtilsTest {
 		expectedEx.expectMessage("No suitable setter");
 
 		UTRecord record = new UTRecord();
-		ExcelUtils.setPropertyWithCellText(UTRecord.class, record, "intObjProp", "abc");
+		ExcelUtils.setPropertyWithCellValue(UTRecord.class, record, "intObjProp", "abc");
 
 	}
 
@@ -176,7 +176,7 @@ public class ExcelUtilsTest {
 	public void setPropertyWithCellTextTest_PrimIntProp() {
 		UTRecord record = new UTRecord();
 
-		ExcelUtils.setPropertyWithCellText(UTRecord.class, record, "primIntProp", "123");
+		ExcelUtils.setPropertyWithCellValue(UTRecord.class, record, "primIntProp", "123");
 		Assert.assertEquals(123, record.getPrimIntProp());
 	}
 
@@ -186,7 +186,7 @@ public class ExcelUtilsTest {
 		expectedEx.expectMessage("No suitable setter");
 
 		UTRecord record = new UTRecord();
-		ExcelUtils.setPropertyWithCellText(UTRecord.class, record, "primIntProp", null);
+		ExcelUtils.setPropertyWithCellValue(UTRecord.class, record, "primIntProp", null);
 	 
 
 	}
@@ -197,7 +197,7 @@ public class ExcelUtilsTest {
 		expectedEx.expectMessage("No suitable setter");
 
 		UTRecord record = new UTRecord();
-		ExcelUtils.setPropertyWithCellText(UTRecord.class, record, "primIntProp", "abc");
+		ExcelUtils.setPropertyWithCellValue(UTRecord.class, record, "primIntProp", "abc");
 	}
 
 	@Test

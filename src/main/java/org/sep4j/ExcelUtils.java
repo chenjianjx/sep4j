@@ -319,7 +319,7 @@ public class ExcelUtils {
 		}
 	}
 
-	static <T> void setPropertyWithCellText(Class<T> recordClass, T record, String propName, Object cellStringOrDate) {
+	static <T> void setPropertyWithCellValue(Class<T> recordClass, T record, String propName, Object cellStringOrDate) {
 		IllegalArgumentException noSetterException = new IllegalArgumentException(MessageFormat.format(
 				"No suitable setter for property \"{0}\" with cellValue \"{1}\" ", propName, cellStringOrDate));
 		List<Method> setters = SepReflectionHelper.findSettersByPropName(recordClass, propName);
@@ -451,7 +451,7 @@ public class ExcelUtils {
 			Cell cell = row.getCell(columnIndex);
 			Object cellStringOrDate = readCellAsStringOrDate(cell);
 			try {
-				setPropertyWithCellText(recordClass, record, propName, cellStringOrDate);
+				setPropertyWithCellValue(recordClass, record, propName, cellStringOrDate);
 			} catch (Exception e) {
 				if (cellErrors != null) {
 					CellError ce = new CellError();
