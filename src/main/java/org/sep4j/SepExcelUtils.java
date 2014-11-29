@@ -3,6 +3,7 @@ package org.sep4j;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -14,8 +15,11 @@ import java.util.Map;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
+import org.apache.poi.hssf.usermodel.HSSFCellStyle;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -129,7 +133,7 @@ public class SepExcelUtils {
 	 * please check the doc of {@link #parse(Map, InputStream, List, Class)}.
 	 * The difference is that this class ignore any all the errors and make sure
 	 * no checked exception is thrown(There may still be unchecked exceptions,
-	 * though). 
+	 * though).
 	 * 
 	 * @param reverseHeaderMap
 	 * @param inputStream
@@ -176,25 +180,9 @@ public class SepExcelUtils {
 	 */
 	public static <T> List<T> parse(Map<String, String> reverseHeaderMap, InputStream inputStream, List<CellError> cellErrors, Class<T> recordClass)
 			throws InvalidFormatException, InvalidHeaderRowException {
-		if (reverseHeaderMap == null || reverseHeaderMap.isEmpty()) {
-			throw new IllegalArgumentException("the reverseHeaderMap can not be null or empty");
-		}
+		validateReverseHeaderMap(reverseHeaderMap);
 
-		int columnIndex = 0;
-		for (Map.Entry<String, String> entry : reverseHeaderMap.entrySet()) {
-			String headerText = entry.getKey();
-			String propName = entry.getValue();
-			if (StringUtils.isBlank(headerText)) {
-				throw new IllegalArgumentException("One header defined in the reverseHeaderMap has a blank headerText. Header Index (0-based) = "
-						+ columnIndex);
-			}
-
-			if (StringUtils.isBlank(propName)) {
-				throw new IllegalArgumentException("One header defined in the reverseHeaderMap has a blank propName. Header Index (0-based) = "
-						+ columnIndex);
-			}
-			columnIndex++;
-		}
+		validateRecordClass(recordClass);
 
 		Workbook workbook = toWorkbook(inputStream);
 		if (workbook.getNumberOfSheets() <= 0) {
@@ -207,7 +195,7 @@ public class SepExcelUtils {
 			return new ArrayList<T>();
 		}
 
-		// key = columnIndex, value= propName
+		// key = columnIndex, value= {propName, headerText}
 		Map<Short, ColumnMeta> columnMetaMap = parseHeader(reverseHeaderMap, sheet.getRow(0));
 		if (columnMetaMap.isEmpty()) {
 			throw new InvalidHeaderRowException();
@@ -267,10 +255,54 @@ public class SepExcelUtils {
 			recordIndex++;
 		}
 
-		if (datumErrors != null && datumErrors.size() > 0 && !stillSaveIfDataError) {
+		if (shouldSave(datumErrors, stillSaveIfDataError)) {
 			return;
 		}
 		writeWorkbook(wb, outputStream);
+	}
+
+	static boolean shouldSave(List<DatumError> datumErrors, boolean stillSaveIfDataError) {
+		return datumErrors != null && datumErrors.size() > 0 && !stillSaveIfDataError;
+	}
+
+	static void validateRecordClass(Class<?> recordClass) {
+		if (recordClass == null) {
+			throw new IllegalArgumentException("the recordClass can not be null");
+		}
+		try {
+			Constructor<?> defaultCounstructor = recordClass.getConstructor(new Class<?>[0]);
+
+			if (!defaultCounstructor.isAccessible()) {
+				throw new IllegalArgumentException(recordClass.getName() + " doesn't have an accessable default construct ");
+			}
+		} catch (SecurityException e) {
+			throw new IllegalArgumentException(e);
+		} catch (NoSuchMethodException e) {
+			throw new IllegalArgumentException(recordClass.getName() + " doesn't have a default construct hence not instantializable ", e);
+		}
+
+	}
+
+	static void validateReverseHeaderMap(Map<String, String> reverseHeaderMap) {
+		if (reverseHeaderMap == null || reverseHeaderMap.isEmpty()) {
+			throw new IllegalArgumentException("the reverseHeaderMap can not be null or empty");
+		}
+
+		int columnIndex = 0;
+		for (Map.Entry<String, String> entry : reverseHeaderMap.entrySet()) {
+			String headerText = entry.getKey();
+			String propName = entry.getValue();
+			if (StringUtils.isBlank(headerText)) {
+				throw new IllegalArgumentException("One header defined in the reverseHeaderMap has a blank headerText. Header Index (0-based) = "
+						+ columnIndex);
+			}
+
+			if (StringUtils.isBlank(propName)) {
+				throw new IllegalArgumentException("One header defined in the reverseHeaderMap has a blank propName. Header Index (0-based) = "
+						+ columnIndex);
+			}
+			columnIndex++;
+		}
 	}
 
 	private static <T> T parseDataRow(Map<Short, ColumnMeta> columnMetaMap, Row row, int rowIndex, Class<T> recordClass, List<CellError> cellErrors) {
@@ -285,7 +317,7 @@ public class SepExcelUtils {
 			Cell cell = row.getCell(columnIndex);
 			String cellText = readCellAsString(cell);
 			try {
-				setPropertyFromCellText(recordClass, record, propName, cellText);
+				setPropertyWithCellText(recordClass, record, propName, cellText);
 			} catch (Exception e) {
 				if (cellErrors != null) {
 					CellError ce = new CellError();
@@ -302,7 +334,7 @@ public class SepExcelUtils {
 		return record;
 	}
 
-	private static <T> void setPropertyFromCellText(Class<T> recordClass, T record, String propName, String cellText) {
+	static <T> void setPropertyWithCellText(Class<T> recordClass, T record, String propName, String cellText) {
 		// try to find a string-type setter first
 		Method stringSetter = SepReflectionHelper.findSetterByPropNameAndType(recordClass, propName, String.class);
 		if (stringSetter != null) {
@@ -428,13 +460,25 @@ public class SepExcelUtils {
 	}
 
 	private static Row createHeaders(LinkedHashMap<String, String> headerMap, Sheet sheet) {
+		CellStyle style = sheet.getWorkbook().createCellStyle();
+		style.setFillForegroundColor(IndexedColors.YELLOW.getIndex());
+		style.setFillPattern(CellStyle.SOLID_FOREGROUND);
+		style.setBorderBottom(HSSFCellStyle.BORDER_THIN);
+		style.setBorderTop(HSSFCellStyle.BORDER_THIN);
+		style.setBorderRight(HSSFCellStyle.BORDER_THIN);
+		style.setBorderLeft(HSSFCellStyle.BORDER_THIN);
+
 		Row header = sheet.createRow(0);
 		int columnIndex = 0;
 		for (Map.Entry<String, String> entry : headerMap.entrySet()) {
 			String headerText = StringUtils.defaultString(entry.getValue());
-			createCell(header, columnIndex).setCellValue(headerText);
+			Cell cell = createCell(header, columnIndex);
+			cell.setCellValue(headerText);
+			cell.setCellStyle(style);
+			sheet.autoSizeColumn(columnIndex);
 			columnIndex++;
 		}
+
 		return header;
 	}
 
