@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -256,31 +257,33 @@ public class SepExcelUtils {
 		}
 
 		if (shouldSave(datumErrors, stillSaveIfDataError)) {
-			return;
+			writeWorkbook(wb, outputStream);
 		}
-		writeWorkbook(wb, outputStream);
+
 	}
 
+	/**
+	 * the workbook has been generated. Should we write it to the outputstream?
+	 * 
+	 * @param datumErrors
+	 * @param stillSaveIfDataError
+	 * @return
+	 */
 	static boolean shouldSave(List<DatumError> datumErrors, boolean stillSaveIfDataError) {
-		return datumErrors != null && datumErrors.size() > 0 && !stillSaveIfDataError;
+		if (stillSaveIfDataError) {
+			return true;
+		}
+		if (datumErrors == null || datumErrors.isEmpty()) {
+			return true;
+		} else {
+			return false;
+		}
 	}
 
 	static void validateRecordClass(Class<?> recordClass) {
 		if (recordClass == null) {
 			throw new IllegalArgumentException("the recordClass can not be null");
 		}
-		try {
-			Constructor<?> defaultCounstructor = recordClass.getConstructor(new Class<?>[0]);
-
-			if (!defaultCounstructor.isAccessible()) {
-				throw new IllegalArgumentException(recordClass.getName() + " doesn't have an accessable default construct ");
-			}
-		} catch (SecurityException e) {
-			throw new IllegalArgumentException(e);
-		} catch (NoSuchMethodException e) {
-			throw new IllegalArgumentException(recordClass.getName() + " doesn't have a default construct hence not instantializable ", e);
-		}
-
 	}
 
 	static void validateReverseHeaderMap(Map<String, String> reverseHeaderMap) {
@@ -305,8 +308,44 @@ public class SepExcelUtils {
 		}
 	}
 
+	static void validateHeaderMap(LinkedHashMap<String, String> headerMap) {
+		if (headerMap == null || headerMap.isEmpty()) {
+			throw new IllegalArgumentException("the headerMap can not be null or empty");
+		}
+		int columnIndex = 0;
+		for (Map.Entry<String, String> entry : headerMap.entrySet()) {
+			String propName = entry.getKey();
+			if (StringUtils.isBlank(propName)) {
+				throw new IllegalArgumentException("One header has a blank propName. Header Index (0-based) = " + columnIndex);
+			}
+			columnIndex++;
+		}
+	}
+
+	static <T> void setPropertyWithCellText(Class<T> recordClass, T record, String propName, String cellText) {
+		// try to find a string-type setter first
+		Method stringSetter = SepReflectionHelper.findSetterByPropNameAndType(recordClass, propName, String.class);
+		if (stringSetter != null) {
+			SepReflectionHelper.invokeSetter(stringSetter, record, cellText);
+			return;
+		}
+
+		// no string-type setter? do a guess!
+		List<Method> setters = SepReflectionHelper.findSettersByPropName(recordClass, propName);
+		for (Method setter : setters) {
+			Class<?> propClass = setter.getParameterTypes()[0];
+			if (SepBasicTypeConverts.canFromThisString(cellText, propClass)) {
+				Object propValue = SepBasicTypeConverts.fromThisString(cellText, propClass);
+				SepReflectionHelper.invokeSetter(setter, record, propValue);
+				return;
+			}
+		}
+
+		throw new IllegalArgumentException(MessageFormat.format("No suitable setter for property \"{0}\" with cellText \"{1}\" ", propName, cellText));
+	}
+
 	private static <T> T parseDataRow(Map<Short, ColumnMeta> columnMetaMap, Row row, int rowIndex, Class<T> recordClass, List<CellError> cellErrors) {
-		T record = newInstance(recordClass);
+		T record = createRecordInstance(recordClass);
 
 		for (short columnIndex = 0; columnIndex < row.getLastCellNum(); columnIndex++) {
 			ColumnMeta columnMeta = columnMetaMap.get(columnIndex);
@@ -334,28 +373,6 @@ public class SepExcelUtils {
 		return record;
 	}
 
-	static <T> void setPropertyWithCellText(Class<T> recordClass, T record, String propName, String cellText) {
-		// try to find a string-type setter first
-		Method stringSetter = SepReflectionHelper.findSetterByPropNameAndType(recordClass, propName, String.class);
-		if (stringSetter != null) {
-			SepReflectionHelper.invokeSetter(stringSetter, record, cellText);
-			return;
-		}
-
-		// no string-type setter? do a guess!
-		List<Method> setters = SepReflectionHelper.findSettersByPropName(recordClass, propName);
-		for (Method setter : setters) {
-			Class<?> propClass = setter.getParameterTypes()[0];
-			if (SepBasicTypeConverts.canFromThisString(cellText, propClass)) {
-				Object propValue = SepBasicTypeConverts.fromThisString(cellText, propClass);
-				SepReflectionHelper.invokeSetter(setter, record, propValue);
-				return;
-			}
-		}
-
-		throw new IllegalArgumentException(MessageFormat.format("No suitable setter for property \"{0}\" with cellText \"{1}\" ", propName, cellText));
-	}
-
 	/**
 	 * meta info about a column
 	 * 
@@ -371,13 +388,19 @@ public class SepExcelUtils {
 		}
 	}
 
-	private static <T> T newInstance(Class<T> recordClass) {
+	static <T> T createRecordInstance(Class<T> recordClass) {
 		try {
-			return recordClass.newInstance();
+			Constructor<T> constructor = recordClass.getDeclaredConstructor(new Class[0]);
+			constructor.setAccessible(true);
+			return constructor.newInstance(new Object[0]);
+		} catch (NoSuchMethodException e) {
+			throw new RuntimeException(e);
 		} catch (InstantiationException e) {
-			throw new IllegalArgumentException(e);
+			throw new RuntimeException(e);
 		} catch (IllegalAccessException e) {
-			throw new IllegalArgumentException(e);
+			throw new RuntimeException(e);
+		} catch (InvocationTargetException e) {
+			throw new RuntimeException(e);
 		}
 	}
 
@@ -443,20 +466,6 @@ public class SepExcelUtils {
 		}
 		return null;
 
-	}
-
-	static void validateHeaderMap(LinkedHashMap<String, String> headerMap) {
-		if (headerMap == null || headerMap.isEmpty()) {
-			throw new IllegalArgumentException("the headerMap can not be null or empty");
-		}
-		int columnIndex = 0;
-		for (Map.Entry<String, String> entry : headerMap.entrySet()) {
-			String propName = entry.getKey();
-			if (StringUtils.isBlank(propName)) {
-				throw new IllegalArgumentException("One header has a blank propName. Header Index (0-based) = " + columnIndex);
-			}
-			columnIndex++;
-		}
 	}
 
 	private static Row createHeaders(LinkedHashMap<String, String> headerMap, Sheet sheet) {
