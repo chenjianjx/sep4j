@@ -97,10 +97,9 @@ sep4j will call the properties' toString() methods to convert a property value t
 ```  
 
 Also, add it to the header map: 
-
->		<del>headerMap.put("birthDay", "Birth Date");</del>
->		headerMap.put("birthDayString", "Birth Date");
-    
+```java
+		headerMap.put("birthDayString", "Birth Date");
+```    
 
 * Can I let sep4j produce Numeric-typed cells or another type others than String ? 
 ..* No, you can't. This is how sep4j keeps itself simple.
