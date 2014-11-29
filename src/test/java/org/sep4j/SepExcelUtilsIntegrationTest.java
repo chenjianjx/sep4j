@@ -4,18 +4,22 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import junit.framework.Assert;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
@@ -33,7 +37,7 @@ import org.junit.rules.ExpectedException;
  * 
  */
 
-public class SepExcelUtilsITest {
+public class SepExcelUtilsIntegrationTest {
 
 	@Rule
 	public ExpectedException expectedEx = ExpectedException.none();
@@ -228,6 +232,58 @@ public class SepExcelUtilsITest {
 
 	}
 
+	@Test(expected = InvalidHeaderRowException.class)
+	public void parseTest_InvalidHeader() throws InvalidFormatException, InvalidHeaderRowException {
+		ByteArrayInputStream in = toByteArrayInputStreamAndClose(this.getClass().getResourceAsStream("/itest-all-headers-wrong.xlsx"));
+		SepExcelUtils.parse(ITRecord.getReverseHeaderMap(), in, null, ITRecord.class);
+	}
+	
+	
+	
+	@Test
+	public void parseTest_Excel97() throws InvalidFormatException, InvalidHeaderRowException {
+		ByteArrayInputStream in = toByteArrayInputStreamAndClose(this.getClass().getResourceAsStream("/itest-excel97.xls"));
+		List<ITRecord> list = SepExcelUtils.parse(ITRecord.getReverseHeaderMap(), in, null, ITRecord.class);
+		Assert.assertEquals((short)1, list.get(0).getPrimShort());
+	}
+	
+	
+	@Test
+	public void parseTest_DataHalfCorrect() throws InvalidFormatException, InvalidHeaderRowException {
+		ByteArrayInputStream in = toByteArrayInputStreamAndClose(this.getClass().getResourceAsStream("/itest-data-half-correct.xlsx"));
+		List<CellError> cellErrors = new ArrayList<CellError>();
+		List<ITRecord> records = SepExcelUtils.parse(ITRecord.getReverseHeaderMap(), in,cellErrors, ITRecord.class);
+		
+		
+		ITRecord record = records.get(0);
+		Assert.assertEquals(1, records.size());
+		Assert.assertEquals(123, record.getPrimInt());
+		
+		CellError error = cellErrors.get(0);
+		Assert.assertEquals(1, cellErrors.size());
+		Assert.assertEquals(2, error.getRowIndexOneBased());
+		Assert.assertEquals(3, error.getColumnIndexOneBased());
+		Assert.assertTrue(error.getCause().getMessage().contains("suitable setter"));		
+		Assert.assertTrue(error.getCause().getMessage().contains("abc"));
+	}
+	
+ 
+
+	// read outside input streams as bytes and then close them, so as to avoid
+	// try/finally snippet code in every parsing test
+	// method
+	private ByteArrayInputStream toByteArrayInputStreamAndClose(InputStream in) {
+		try {
+			byte[] bytes = IOUtils.toByteArray(in);
+			return new ByteArrayInputStream(bytes);
+		} catch (IOException e) {
+			throw new IllegalStateException(e);
+		} finally {
+			IOUtils.closeQuietly(in);
+		}
+
+	}
+
 	private File newFile(String prefix) {
 		File dir = new File(System.getProperty("user.home"), "/temp/sep");
 		dir.mkdirs();
@@ -281,6 +337,10 @@ public class SepExcelUtilsITest {
 
 		public static LinkedHashMap<String, String> getHeaderMap() {
 			return new LinkedHashMap<String, String>(headerMap);
+		}
+
+		public static Map<String, String> getReverseHeaderMap() {
+			return reverse(headerMap);
 		}
 
 		public Date getDate() {
@@ -412,4 +472,15 @@ public class SepExcelUtilsITest {
 		}
 
 	}
+
+	private static <K, V> LinkedHashMap<V, K> reverse(Map<K, V> origMap) {
+		LinkedHashMap<V, K> newMap = new LinkedHashMap<V, K>();
+		if (origMap == null) {
+			origMap = new HashMap<K, V>();
+		}
+		for (Map.Entry<K, V> entry : origMap.entrySet())
+			newMap.put(entry.getValue(), entry.getKey());
+		return newMap;
+	}
+
 }

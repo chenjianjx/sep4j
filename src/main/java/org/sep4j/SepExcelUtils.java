@@ -193,10 +193,6 @@ public class SepExcelUtils {
 		}
 
 		Sheet sheet = workbook.getSheetAt(0);
-		// less than two rows, meaning no data rows or nothing
-		if (sheet.getLastRowNum() < 1) {
-			return new ArrayList<T>();
-		}
 
 		// key = columnIndex, value= {propName, headerText}
 		Map<Short, ColumnMeta> columnMetaMap = parseHeader(reverseHeaderMap, sheet.getRow(0));
