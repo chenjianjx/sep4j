@@ -7,7 +7,8 @@
 
 		Collection<User> users = Arrays.asList(user1, user2);
 		LinkedHashMap<String, String> headerMap = new LinkedHashMap<String, String>();
-		headerMap.put("userId", "User Id");  //"userId" is a property of User class. "User Id" will be the column header in the excel.
+		headerMap.put("userId", "User Id");  //"userId" is a property of User class.
+							// "User Id" will be the column header in the excel.
 		headerMap.put("firstName", "First Name");
 		headerMap.put("lastName", "Last Name");
 		
@@ -27,7 +28,8 @@ Note: All cells generated will be String-Typed Cells.
 
 ```java
 		Map<String, String> reverseHeaderMap = new HashMap<String,String>();
-		reverseHeaderMap.put("User Id", "userId");  //"User Id" is a column header in the excel."userId" is the corresponding property of User class.
+		reverseHeaderMap.put("User Id", "userId");  //"User Id" is a column header in the excel.
+								//"userId" is the corresponding property of User class.
 		reverseHeaderMap.put("First Name", "firstName");
 		reverseHeaderMap.put("Last Name","lastName");
 		
