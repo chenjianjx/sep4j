@@ -1,13 +1,22 @@
 package org.sep4j.showcase;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang.builder.ToStringStyle;
 import org.sep4j.ExcelUtils;
 
 /**
@@ -18,10 +27,26 @@ import org.sep4j.ExcelUtils;
 public class SepShowcases {
 
 	public static void main(String[] args) throws IOException {
-		basicSave();
+		basicParse();
+	
 	}
+	
+	private static void basicParse() throws IOException{
+		File file = basicSave();
+		InputStream inputStream = toByteArrayInputStreamAndClose(new FileInputStream(file));
+		
+		Map<String, String> reverseHeaderMap = new HashMap<String,String>();
+		reverseHeaderMap.put("User Id", "userId");  //"User Id" is a column header in the excel."userId" is the corresponding property of User class.
+		reverseHeaderMap.put("First Name", "firstName");
+		reverseHeaderMap.put("Last Name","lastName");
+		
+		List<User> users = ExcelUtils.parseIgnoringErrors(reverseHeaderMap, inputStream, User.class);
+		
+		System.out.println(users);
+	}
+	
 
-	private static void basicSave() throws IOException {
+	private static File basicSave() throws IOException {
 
 
 
@@ -42,7 +67,7 @@ public class SepShowcases {
 		
 		Collection<User> users = Arrays.asList(user1, user2);
 		LinkedHashMap<String, String> headerMap = new LinkedHashMap<String, String>();
-		headerMap.put("userId", "User Id");  //userId is the property of User class
+		headerMap.put("userId", "User Id");  //"userId" is a property of User class. "User Id" will be the corresponding column header in the excel.
 		headerMap.put("firstName", "First Name");
 		headerMap.put("lastName", "Last Name");
 		
@@ -52,7 +77,9 @@ public class SepShowcases {
 		
 		
 		byte[] excel = outputStream.toByteArray();
-		FileUtils.writeByteArrayToFile(createFile("save"), excel);
+		File theFile = createFile("save");
+		FileUtils.writeByteArrayToFile(theFile, excel);
+		return theFile;
 
 	}
 
@@ -63,13 +90,28 @@ public class SepShowcases {
 		File file = new File(dir, filename);
 		return file;
 	}
+	
+	private static ByteArrayInputStream toByteArrayInputStreamAndClose(InputStream in) {
+		try {
+			byte[] bytes = IOUtils.toByteArray(in);
+			return new ByteArrayInputStream(bytes);
+		} catch (IOException e) {
+			throw new IllegalStateException(e);
+		} finally {
+			IOUtils.closeQuietly(in);
+		}
 
+	}
+
+
+	@SuppressWarnings("unused")
 	private static final class User {
 
 		private long userId;
 		private String firstName;
 		private String lastName;
 
+		
 		public long getUserId() {
 			return userId;
 		}
@@ -94,6 +136,12 @@ public class SepShowcases {
 			this.lastName = lastName;
 		}
 
+		
+
+		@Override
+		public String toString() {
+			return ToStringBuilder.reflectionToString(this, ToStringStyle.SHORT_PREFIX_STYLE);
+		}
 	}
 
 }
