@@ -103,6 +103,7 @@ public class SepReflectionHelper {
 
 	private static Object invokeGetter(Method getter, Object object) {
 		try {
+			getter.setAccessible(true);
 			return getter.invoke(object, new Object[0]);
 		} catch (IllegalAccessException e) {
 			throw new IllegalStateException(e);
@@ -128,6 +129,7 @@ public class SepReflectionHelper {
 		}
 
 		try {
+			setter.setAccessible(true);
 			setter.invoke(object, new Object[] { propValue });
 		} catch (IllegalAccessException e) {
 			throw new IllegalStateException(e);

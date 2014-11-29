@@ -65,105 +65,155 @@ public class SepExcelUtilsTest {
 		expectedEx.expectMessage("<init>()");
 		SepExcelUtils.createRecordInstance(NoDefaultConstructorBean.class);
 	}
-	
-	
+
 	@Test
-	public void validateReverseHeaderMapTest_Null(){
+	public void validateReverseHeaderMapTest_Null() {
 		expectedEx.expect(IllegalArgumentException.class);
 		expectedEx.expectMessage("null");
 		SepExcelUtils.validateReverseHeaderMap(null);
 	}
-	
-	
+
 	@Test
-	public void validateReverseHeaderMapTest_Empty(){
+	public void validateReverseHeaderMapTest_Empty() {
 		expectedEx.expect(IllegalArgumentException.class);
 		expectedEx.expectMessage("empty");
 		Map<String, String> map = new HashMap<String, String>();
 		SepExcelUtils.validateReverseHeaderMap(map);
 	}
-	
-	
+
 	@Test
-	public void validateReverseHeaderMapTest_Positive(){
+	public void validateReverseHeaderMapTest_Positive() {
 		Map<String, String> map = new HashMap<String, String>();
 		map.put("someText", "someProp");
 		SepExcelUtils.validateReverseHeaderMap(map);
 	}
-	
-	
+
 	@Test
-	public void validateReverseHeaderMapTest_TextBlank(){
+	public void validateReverseHeaderMapTest_TextBlank() {
 		Map<String, String> map = new HashMap<String, String>();
 		expectedEx.expect(IllegalArgumentException.class);
 		expectedEx.expectMessage("blank headerText");
 		expectedEx.expectMessage("1");
-		
+
 		map.put("text1", "prop1");
 		map.put("	", "prop2");
 		SepExcelUtils.validateReverseHeaderMap(map);
 	}
 
-	
 	@Test
-	public void validateReverseHeaderMapTest_PropBlank(){
+	public void validateReverseHeaderMapTest_PropBlank() {
 		Map<String, String> map = new HashMap<String, String>();
 		expectedEx.expect(IllegalArgumentException.class);
 		expectedEx.expectMessage("blank propName");
 		expectedEx.expectMessage("1");
-		
+
 		map.put("text1", "prop1");
 		map.put("text2", "	");
 		SepExcelUtils.validateReverseHeaderMap(map);
 	}
-	
-	
+
 	@Test
-	public void validateHeaderMapTest_Null(){
+	public void validateHeaderMapTest_Null() {
 		expectedEx.expect(IllegalArgumentException.class);
 		expectedEx.expectMessage("null");
 		SepExcelUtils.validateHeaderMap(null);
 	}
-	
-	
+
 	@Test
-	public void validateHeaderMapTest_Empty(){
+	public void validateHeaderMapTest_Empty() {
 		expectedEx.expect(IllegalArgumentException.class);
 		expectedEx.expectMessage("empty");
 		LinkedHashMap<String, String> map = new LinkedHashMap<String, String>();
 		SepExcelUtils.validateHeaderMap(map);
 	}
-	
-	
+
 	@Test
-	public void validateHeaderMapTest_Positive(){
+	public void validateHeaderMapTest_Positive() {
 		LinkedHashMap<String, String> map = new LinkedHashMap<String, String>();
 		map.put("someProp", "someText");
 		SepExcelUtils.validateHeaderMap(map);
 	}
-	
-	
+
 	@Test
-	public void validateHeaderMapTest_PropBlank(){
+	public void validateHeaderMapTest_PropBlank() {
 		LinkedHashMap<String, String> map = new LinkedHashMap<String, String>();
 		expectedEx.expect(IllegalArgumentException.class);
 		expectedEx.expectMessage("blank propName");
 		expectedEx.expectMessage("1");
-		
+
 		map.put("prop1", "text1");
 		map.put("	", "text2");
 		SepExcelUtils.validateHeaderMap(map);
 	}
-	
-	
-	
+
+	@Test
+	public void setPropertyWithCellTextTest_StrProp() {
+		Record record = new Record();
+
+		SepExcelUtils.setPropertyWithCellText(Record.class, record, "strProp", "abc");
+		Assert.assertEquals("abc", record.getStrProp());
+
+		SepExcelUtils.setPropertyWithCellText(Record.class, record, "strProp", null);
+		Assert.assertNull(record.getStrProp());
+	}
+
+	@Test
+	public void setPropertyWithCellTextTest_IntObjProp() {
+		Record record = new Record();
+
+		SepExcelUtils.setPropertyWithCellText(Record.class, record, "intObjProp", "123");
+		Assert.assertEquals(new Integer(123), record.getIntObjProp());
+
+		SepExcelUtils.setPropertyWithCellText(Record.class, record, "intObjProp", null);
+		Assert.assertNull(record.getIntObjProp());
+
+	}
+
+	@Test
+	public void setPropertyWithCellTextTest_IntObjProp_NotNumer() {
+		expectedEx.expect(IllegalArgumentException.class);
+		expectedEx.expectMessage("No suitable setter");
+		
+		Record record = new Record();
+		SepExcelUtils.setPropertyWithCellText(Record.class, record, "intObjProp", "abc");
+
+	}
+
+	@Test
+	public void setPropertyWithCellTextTest_PrimIntProp() {
+		Record record = new Record();
+
+		SepExcelUtils.setPropertyWithCellText(Record.class, record, "primIntProp", "123");
+		Assert.assertEquals(123, record.getPrimIntProp());
+	}
+
+	@Test
+	public void setPropertyWithCellTextTest_PrimIntProp_NullText() {
+		expectedEx.expect(IllegalArgumentException.class);
+		expectedEx.expectMessage("No suitable setter");
+		
+		Record record = new Record();
+		SepExcelUtils.setPropertyWithCellText(Record.class, record, "primIntProp", null);
+		Assert.assertNull(record.getPrimIntProp());
+
+	}
+
+	@Test
+	public void setPropertyWithCellTextTest_PrimIntProp_NotNumber() {
+		expectedEx.expect(IllegalArgumentException.class);
+		expectedEx.expectMessage("No suitable setter");
+		
+		Record record = new Record();
+		SepExcelUtils.setPropertyWithCellText(Record.class, record, "primIntProp", "abc");	
+	}
+
 	/**
 	 * create one workbook and then parse it, excepting the final java list
 	 * equals to the original one
 	 * 
 	 * @throws IOException
 	 */
-	@Test
+	
 	public void saveAndParseTest() throws Exception {
 		// the map
 		final LinkedHashMap<String, String> headerMap = new LinkedHashMap<String, String>();
@@ -353,6 +403,37 @@ public class SepExcelUtilsTest {
 		public String toString() {
 			return ToStringBuilder.reflectionToString(this, ToStringStyle.SHORT_PREFIX_STYLE);
 		}
+	}
+
+	private static class Record {
+		private int primIntProp;
+		private Integer intObjProp;
+		private String strProp;
+
+		public int getPrimIntProp() {
+			return primIntProp;
+		}
+
+		public void setPrimIntProp(int primIntProp) {
+			this.primIntProp = primIntProp;
+		}
+
+		public Integer getIntObjProp() {
+			return intObjProp;
+		}
+
+		public void setIntObjProp(Integer intObjProp) {
+			this.intObjProp = intObjProp;
+		}
+
+		public String getStrProp() {
+			return strProp;
+		}
+
+		public void setStrProp(String strProp) {
+			this.strProp = strProp;
+		}
+
 	}
 
 	private static class PrivateClassBean {
