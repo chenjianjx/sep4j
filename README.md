@@ -46,7 +46,9 @@ Note: All cells generated will be String-Typed Cells.
 		headerMap.put("fakeProperty", "Fake Property"); //try to write an non-existing property
 		ExcelUtils.save(headerMap, users, outputStream, "!!ERROR!!", datumErrors); 		
 		for (DatumError de : datumErrors) {//here to handle the errors
-			System.err.println(MessageFormat.format("Error: recordIndex = {0}, propName = \"{1}\", cause = {2}", de.getRecordIndex(), de.getPropName(), de.getCause()));			
+			System.err.println(MessageFormat.format("Error: recordIndex = {0}, 
+			propName = \"{1}\", cause = {2}",
+			de.getRecordIndex(), de.getPropName(), de.getCause()));			
 		}
 ```		
 
@@ -69,8 +71,10 @@ Will then get an excel file like
 			System.err.println("The column headers of your excel file do not match what we need");
 		}		
 		for (CellError ce : cellErrors) {
-			System.err.println(MessageFormat.format("failed to parse a cell: rowIndexOneBased = {0}, columnIndexOneBased = {1}, propName = \"{2}\", headerText = \"{3}\", cause = {4} ", 
-					ce.getRowIndexOneBased(),ce.getColumnIndexOneBased(), ce.getPropName(),ce.getHeaderText(), ce.getCause()));
+			System.err.println(MessageFormat.format("failed to parse a cell: rowIndexOneBased = {0},
+			columnIndexOneBased = {1}, propName = \"{2}\", headerText = \"{3}\", cause = {4} ", 
+					ce.getRowIndexOneBased(),ce.getColumnIndexOneBased(),
+					ce.getPropName(),ce.getHeaderText(), ce.getCause()));
 		}
 ```
 ---
@@ -103,6 +107,7 @@ Also, add it to the header map:
 ```    
 
 * Can I let sep4j produce Numeric-typed cells or another type others than String ? 
+
 > No, you can't. This is how sep4j keeps itself simple.
 
 ####Parse
