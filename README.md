@@ -80,6 +80,7 @@ Will then get an excel file like
 sep4j will call the properties' toString() methods to convert a property value to a String, and then write them to an excel file as String-typed cells.
 
 * What if I want the property printed another way instead of toString(), for example, to format a date in Chinese style? 
+
 > Create a new, String-typed property in your class by adding a getter method. 
 
 ```java
