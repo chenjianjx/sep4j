@@ -1,7 +1,5 @@
 ##sep4j
 ---
-sep4j = Simplified Excel Processing for Java, with which you can write or read an excel file with a simple method call.
----
 ###Basic Examples
 
 ####Save(Write)
