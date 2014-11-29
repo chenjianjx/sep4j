@@ -37,6 +37,8 @@ import org.sep4j.support.SepReflectionHelper;
  * 
  */
 public class SepExcelUtils {
+	
+ 
 
 	/**
 	 * save records to a new workbook even if there are datum errors in the
@@ -344,6 +346,63 @@ public class SepExcelUtils {
 		throw new IllegalArgumentException(MessageFormat.format("No suitable setter for property \"{0}\" with cellText \"{1}\" ", propName, cellText));
 	}
 
+	static <T> T createRecordInstance(Class<T> recordClass) {
+		try {
+			Constructor<T> constructor = recordClass.getDeclaredConstructor(new Class[0]);
+			constructor.setAccessible(true);
+			return constructor.newInstance(new Object[0]);
+		} catch (NoSuchMethodException e) {
+			throw new RuntimeException(e);
+		} catch (InstantiationException e) {
+			throw new RuntimeException(e);
+		} catch (IllegalAccessException e) {
+			throw new RuntimeException(e);
+		} catch (InvocationTargetException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	/**
+	 * read the cell's string value no matter what type the cell is of. Actually
+	 * it only supports 3 types: string, numeric and boolean.
+	 * 
+	 * @param cell
+	 * @return the string representation of the cell (will be trimmed to null)
+	 */
+	static String readCellAsString(Cell cell) {
+		if (cell == null) {
+			return null;
+		}
+
+		if (cell.getCellType() == Cell.CELL_TYPE_BLANK) {
+			return null;
+		}
+
+		if (cell.getCellType() == Cell.CELL_TYPE_BOOLEAN) {
+			return String.valueOf(cell.getBooleanCellValue());
+		}
+
+		if (cell.getCellType() == Cell.CELL_TYPE_ERROR) {
+			return null;
+		}
+
+		if (cell.getCellType() == Cell.CELL_TYPE_FORMULA) {
+			return null;
+		}
+
+		if (cell.getCellType() == Cell.CELL_TYPE_NUMERIC) {
+			double v = cell.getNumericCellValue();
+			return String.valueOf(v);
+		}
+
+		if (cell.getCellType() == Cell.CELL_TYPE_STRING) {
+			String s = cell.getStringCellValue();
+			return StringUtils.trimToNull(s);
+		}
+		return null;
+
+	}
+
 	private static <T> T parseDataRow(Map<Short, ColumnMeta> columnMetaMap, Row row, int rowIndex, Class<T> recordClass, List<CellError> cellErrors) {
 		T record = createRecordInstance(recordClass);
 
@@ -388,22 +447,12 @@ public class SepExcelUtils {
 		}
 	}
 
-	static <T> T createRecordInstance(Class<T> recordClass) {
-		try {
-			Constructor<T> constructor = recordClass.getDeclaredConstructor(new Class[0]);
-			constructor.setAccessible(true);
-			return constructor.newInstance(new Object[0]);
-		} catch (NoSuchMethodException e) {
-			throw new RuntimeException(e);
-		} catch (InstantiationException e) {
-			throw new RuntimeException(e);
-		} catch (IllegalAccessException e) {
-			throw new RuntimeException(e);
-		} catch (InvocationTargetException e) {
-			throw new RuntimeException(e);
-		}
-	}
-
+	/**
+	 * to get <columnIndex, column info>
+	 * @param reverseHeaderMap
+	 * @param row
+	 * @return
+	 */
 	private static Map<Short, ColumnMeta> parseHeader(Map<String, String> reverseHeaderMap, Row row) {
 		Map<Short, ColumnMeta> columnMetaMap = new LinkedHashMap<Short, ColumnMeta>();
 
@@ -425,47 +474,6 @@ public class SepExcelUtils {
 			columnMetaMap.put(columnIndex, cm);
 		}
 		return columnMetaMap;
-	}
-
-	/**
-	 * read the cell's string value no matter what type the cell is of. Actually
-	 * it only supports 3 types: string, numeric and boolean.
-	 * 
-	 * @param cell
-	 * @return the string representation of the cell (will be trimmed to null)
-	 */
-	private static String readCellAsString(Cell cell) {
-		if (cell == null) {
-			return null;
-		}
-
-		if (cell.getCellType() == Cell.CELL_TYPE_BLANK) {
-			return null;
-		}
-
-		if (cell.getCellType() == Cell.CELL_TYPE_BOOLEAN) {
-			return String.valueOf(cell.getBooleanCellValue());
-		}
-
-		if (cell.getCellType() == Cell.CELL_TYPE_ERROR) {
-			return null;
-		}
-
-		if (cell.getCellType() == Cell.CELL_TYPE_FORMULA) {
-			return null;
-		}
-
-		if (cell.getCellType() == Cell.CELL_TYPE_NUMERIC) {
-			double v = cell.getNumericCellValue();
-			return String.valueOf(v);
-		}
-
-		if (cell.getCellType() == Cell.CELL_TYPE_STRING) {
-			String s = cell.getStringCellValue();
-			return StringUtils.trimToNull(s);
-		}
-		return null;
-
 	}
 
 	private static Row createHeaders(LinkedHashMap<String, String> headerMap, Sheet sheet) {
@@ -497,6 +505,7 @@ public class SepExcelUtils {
 		int columnIndex = 0;
 
 		for (Map.Entry<String, String> entry : headerMap.entrySet()) {
+			boolean datumErr = false;
 			String propName = entry.getKey();
 			Object propValue = null;
 			try {
@@ -509,10 +518,20 @@ public class SepExcelUtils {
 					de.setCause(e);
 					datumErrors.add(de);
 				}
+				datumErr = true;
 				propValue = datumErrPlaceholder;
 			}
 			String propValueText = (propValue == null ? null : propValue.toString());
-			createCell(row, columnIndex).setCellValue(StringUtils.defaultString(propValueText));
+			Cell cell = createCell(row, columnIndex);
+			cell.setCellValue(StringUtils.defaultString(propValueText));
+			
+			if(datumErr){
+				CellStyle errStyle = sheet.getWorkbook().createCellStyle();    
+				errStyle.setFillForegroundColor(IndexedColors.RED.getIndex());  
+				errStyle.setFillPattern(CellStyle.SOLID_FOREGROUND);  
+				cell.setCellStyle(errStyle);
+			}
+			
 			columnIndex++;
 		}
 
