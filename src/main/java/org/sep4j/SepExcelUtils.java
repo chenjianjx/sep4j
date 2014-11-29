@@ -37,8 +37,6 @@ import org.sep4j.support.SepReflectionHelper;
  * 
  */
 public class SepExcelUtils {
-	
- 
 
 	/**
 	 * save records to a new workbook even if there are datum errors in the
@@ -445,6 +443,7 @@ public class SepExcelUtils {
 
 	/**
 	 * to get <columnIndex, column info>
+	 * 
 	 * @param reverseHeaderMap
 	 * @param row
 	 * @return
@@ -520,14 +519,14 @@ public class SepExcelUtils {
 			String propValueText = (propValue == null ? null : propValue.toString());
 			Cell cell = createCell(row, columnIndex);
 			cell.setCellValue(StringUtils.defaultString(propValueText));
-			
-			if(datumErr){
-				CellStyle errStyle = sheet.getWorkbook().createCellStyle();    
-				errStyle.setFillForegroundColor(IndexedColors.RED.getIndex());  
-				errStyle.setFillPattern(CellStyle.SOLID_FOREGROUND);  
+
+			if (datumErr) {
+				CellStyle errStyle = sheet.getWorkbook().createCellStyle();
+				errStyle.setFillForegroundColor(IndexedColors.RED.getIndex());
+				errStyle.setFillPattern(CellStyle.SOLID_FOREGROUND);
 				cell.setCellStyle(errStyle);
 			}
-			
+
 			columnIndex++;
 		}
 

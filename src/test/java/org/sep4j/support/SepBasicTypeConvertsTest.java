@@ -29,13 +29,16 @@ public class SepBasicTypeConvertsTest {
 	@Test
 	public void retainWholeIfDecimalPartZeroTest() {
 
+	 
 		assertEquals("0", retainWholeIfDecimalPartZero("0."));
 		assertEquals("0", retainWholeIfDecimalPartZero("0.0"));
 		assertEquals("2", retainWholeIfDecimalPartZero("2.0"));
 		assertEquals("2", retainWholeIfDecimalPartZero("2.000000"));
 		assertEquals("2", retainWholeIfDecimalPartZero("2"));
 		assertEquals("2.01", retainWholeIfDecimalPartZero("2.01"));
-
+		assertEquals("123457000000000000", retainWholeIfDecimalPartZero("1.23457E+17"));
+		
+		
 		assertNull(retainWholeIfDecimalPartZero(null));
 		assertEquals("abc", retainWholeIfDecimalPartZero("abc"));
 		assertEquals("abc.00", retainWholeIfDecimalPartZero("abc.00"));

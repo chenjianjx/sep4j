@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -20,6 +21,8 @@ import junit.framework.Assert;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.time.DateFormatUtils;
+import org.apache.commons.lang.time.DateUtils;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
@@ -81,7 +84,7 @@ public class SepExcelUtilsIntegrationTest {
 		byte[] excel = outputStream.toByteArray();
 
 		// do a save for human eye check
-		FileUtils.writeByteArrayToFile(newFile("saveTest_ValidAndInvalid"), excel);
+		FileUtils.writeByteArrayToFile(createFile("saveTest_ValidAndInvalid"), excel);
 
 		// then parse it
 		Workbook workbook = WorkbookFactory.create(new ByteArrayInputStream(excel));
@@ -137,7 +140,7 @@ public class SepExcelUtilsIntegrationTest {
 		byte[] excel = outputStream.toByteArray();
 
 		// do a save for human eye check
-		FileUtils.writeByteArrayToFile(newFile("saveTest_IngoringErrors"), excel);
+		FileUtils.writeByteArrayToFile(createFile("saveTest_IngoringErrors"), excel);
 
 		// then parse it
 		Workbook workbook = WorkbookFactory.create(new ByteArrayInputStream(excel));
@@ -175,7 +178,7 @@ public class SepExcelUtilsIntegrationTest {
 		byte[] excel = outputStream.toByteArray();
 
 		// do a save for human eye check
-		FileUtils.writeByteArrayToFile(newFile("saveTest_HeadersOnly"), excel);
+		FileUtils.writeByteArrayToFile(createFile("saveTest_HeadersOnly"), excel);
 
 		// then parse it
 		Workbook workbook = WorkbookFactory.create(new ByteArrayInputStream(excel));
@@ -211,7 +214,7 @@ public class SepExcelUtilsIntegrationTest {
 		byte[] excel = outputStream.toByteArray();
 
 		// do a save for human eye check
-		FileUtils.writeByteArrayToFile(newFile("saveTest_BigNumber"), excel);
+		FileUtils.writeByteArrayToFile(createFile("saveTest_BigNumber"), excel);
 
 		// then parse it
 		Workbook workbook = WorkbookFactory.create(new ByteArrayInputStream(excel));
@@ -234,40 +237,101 @@ public class SepExcelUtilsIntegrationTest {
 
 	@Test(expected = InvalidHeaderRowException.class)
 	public void parseTest_InvalidHeader() throws InvalidFormatException, InvalidHeaderRowException {
-		ByteArrayInputStream in = toByteArrayInputStreamAndClose(this.getClass().getResourceAsStream("/itest-all-headers-wrong.xlsx"));
+		ByteArrayInputStream in = toByteArrayInputStreamAndClose(this.getClass().getResourceAsStream("/parse-test-all-headers-wrong.xlsx"));
 		SepExcelUtils.parse(ITRecord.getReverseHeaderMap(), in, null, ITRecord.class);
 	}
-	
-	
-	
+
 	@Test
 	public void parseTest_Excel97() throws InvalidFormatException, InvalidHeaderRowException {
-		ByteArrayInputStream in = toByteArrayInputStreamAndClose(this.getClass().getResourceAsStream("/itest-excel97.xls"));
+		ByteArrayInputStream in = toByteArrayInputStreamAndClose(this.getClass().getResourceAsStream("/parse-test-excel97.xls"));
 		List<ITRecord> list = SepExcelUtils.parse(ITRecord.getReverseHeaderMap(), in, null, ITRecord.class);
-		Assert.assertEquals((short)1, list.get(0).getPrimShort());
+		Assert.assertEquals((short) 1, list.get(0).getPrimShort());
 	}
-	
-	
+
 	@Test
 	public void parseTest_DataHalfCorrect() throws InvalidFormatException, InvalidHeaderRowException {
-		ByteArrayInputStream in = toByteArrayInputStreamAndClose(this.getClass().getResourceAsStream("/itest-data-half-correct.xlsx"));
+		ByteArrayInputStream in = toByteArrayInputStreamAndClose(this.getClass().getResourceAsStream("/parse-test-data-half-correct.xlsx"));
 		List<CellError> cellErrors = new ArrayList<CellError>();
-		List<ITRecord> records = SepExcelUtils.parse(ITRecord.getReverseHeaderMap(), in,cellErrors, ITRecord.class);
-		
-		
+		List<ITRecord> records = SepExcelUtils.parse(ITRecord.getReverseHeaderMap(), in, cellErrors, ITRecord.class);
+
 		ITRecord record = records.get(0);
 		Assert.assertEquals(1, records.size());
 		Assert.assertEquals(123, record.getPrimInt());
-		
+
 		CellError error = cellErrors.get(0);
 		Assert.assertEquals(1, cellErrors.size());
 		Assert.assertEquals(2, error.getRowIndexOneBased());
 		Assert.assertEquals(3, error.getColumnIndexOneBased());
-		Assert.assertTrue(error.getCause().getMessage().contains("suitable setter"));		
+		Assert.assertTrue(error.getCause().getMessage().contains("suitable setter"));
 		Assert.assertTrue(error.getCause().getMessage().contains("abc"));
 	}
-	
- 
+
+	@Test
+	public void parseTest_AllStringCells() throws InvalidFormatException, InvalidHeaderRowException {
+		ByteArrayInputStream in = toByteArrayInputStreamAndClose(this.getClass().getResourceAsStream("/parse-test-all-string-cells-input.xlsx"));
+		List<CellError> cellErrors = new ArrayList<CellError>();
+		List<ITRecord> records = SepExcelUtils.parse(ITRecord.getReverseHeaderMap(), in, cellErrors, ITRecord.class);
+
+		// assertions
+		ITRecord record = records.get(0);
+		Assert.assertEquals(1, records.size());
+		Assert.assertEquals(0, cellErrors.size());
+
+		Assert.assertEquals(12, record.getPrimShort());
+		Assert.assertEquals(2323, record.getPrimInt());
+		Assert.assertEquals(1213l, record.getPrimLong());
+		Assert.assertEquals(342.34f, record.getPrimFloat());
+		Assert.assertEquals(0.34, record.getPrimDouble());
+		Assert.assertEquals(true, record.isPrimBoolean());
+
+		Assert.assertEquals(new Short("23"), record.getObjShort());
+		Assert.assertEquals(new Integer(234), record.getObjInt());
+		Assert.assertEquals(new Long(982), record.getObjLong());
+		Assert.assertEquals(new Float(483.323f), record.getObjFloat());
+		Assert.assertEquals(new Double(23903.234), record.getObjDouble());
+		Assert.assertEquals(new Boolean(false), record.getObjBoolean());
+
+		Assert.assertEquals(new BigInteger("123456789123456789"), record.getBigInteger());
+		Assert.assertEquals(new BigDecimal("123456789.123456789"), record.getBigDecimal());
+		Assert.assertEquals("abc", record.getStr());
+		Assert.assertEquals("2014-11-29 16:18:47", record.getDateStr());
+
+	}
+
+	@Test
+	public void parseTest_FreeTypeCells() throws InvalidFormatException, InvalidHeaderRowException {
+		ByteArrayInputStream in = toByteArrayInputStreamAndClose(this.getClass().getResourceAsStream("/parse-test-all-free-type-input.xlsx"));
+		List<CellError> cellErrors = new ArrayList<CellError>();
+		List<ITRecord> records = SepExcelUtils.parse(ITRecord.getReverseHeaderMap(), in, cellErrors, ITRecord.class);
+
+		// assertions
+		ITRecord record = records.get(0);
+		Assert.assertEquals(1, records.size());
+		Assert.assertEquals(0, cellErrors.size());
+
+		Assert.assertEquals(12, record.getPrimShort());
+		Assert.assertEquals(2323, record.getPrimInt());
+		Assert.assertEquals(1213l, record.getPrimLong());
+		// //floats and doubles won't be accurate
+		Assert.assertEquals(342, (int) record.getPrimFloat());
+		Assert.assertEquals(0, (int) record.getPrimDouble());
+		Assert.assertEquals(true, record.isPrimBoolean());
+
+		Assert.assertEquals(new Short("23"), record.getObjShort());
+		Assert.assertEquals(new Integer(234), record.getObjInt());
+		Assert.assertEquals(new Long(982), record.getObjLong());
+		// //floats and doubles won't be accurate
+		Assert.assertEquals(483, record.getObjFloat().intValue());
+		Assert.assertEquals(23903, record.getObjDouble().intValue());
+		Assert.assertEquals(new Boolean(false), record.getObjBoolean());
+
+		Assert.assertEquals(new BigInteger("123456789123456000"), record.getBigInteger());
+		Assert.assertEquals(123456789, record.getBigDecimal().intValue());
+		Assert.assertEquals("abc", record.getStr());
+		// Assert.assertEquals("2014-11-29 16:18:47", record.getDateStr());
+		// FIXME: let's support date type some day
+
+	}
 
 	// read outside input streams as bytes and then close them, so as to avoid
 	// try/finally snippet code in every parsing test
@@ -284,7 +348,7 @@ public class SepExcelUtilsIntegrationTest {
 
 	}
 
-	private File newFile(String prefix) {
+	private File createFile(String prefix) {
 		File dir = new File(System.getProperty("user.home"), "/temp/sep");
 		dir.mkdirs();
 		String filename = prefix + System.currentTimeMillis() + ".xlsx";
@@ -313,7 +377,7 @@ public class SepExcelUtilsIntegrationTest {
 			headerMap.put("bigInteger", "Big Integer");
 			headerMap.put("bigDecimal", "Big Decimal");
 			headerMap.put("str", "String");
-			headerMap.put("date", "Date");
+			headerMap.put("dateStr", "Date String");
 		}
 		private short primShort;
 		private int primInt;
@@ -349,6 +413,26 @@ public class SepExcelUtilsIntegrationTest {
 
 		public void setDate(Date date) {
 			this.date = date;
+		}
+
+		public String getDateStr() {
+			if (date == null) {
+				return null;
+			}
+			return DateFormatUtils.format(date, "yyyy-MM-dd HH:mm:ss");
+		}
+
+		public void setDateStr(String s) {
+			if (s == null) {
+				return;
+			}
+			try {
+				Date d = DateUtils.parseDate(s, new String[] { "yyyy-MM-dd HH:mm:ss" });
+				this.setDate(d);
+			} catch (ParseException e) {
+				throw new IllegalArgumentException(e);
+			}
+
 		}
 
 		public short getPrimShort() {

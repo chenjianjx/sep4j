@@ -179,7 +179,7 @@ public class SepBasicTypeConverts {
 		}
 
 		public Object fromThisString(String str) {
-			if(str == null){
+			if (str == null) {
 				throw new IllegalArgumentException("don't take null for primitive boolean type");
 			}
 
@@ -327,16 +327,28 @@ public class SepBasicTypeConverts {
 	/**
 	 * get the whole number part if the string is numeric and the decimal part
 	 * is zero <br/>
-	 * i.e. null => null<br/>
+	 * e.g. null => null<br/>
 	 * "3.00" => "3"<br/>
 	 * "3.02" => "3.02" <br/>
-	 * "3" =>"3"
+	 * "3" =>"3". <br/>
+	 * It also accommodates scientific notions with precision loss. <br/>
+	 * e.g. "1.23457E+17 => 123457000000000000
 	 * 
 	 * @param s
 	 * @return
 	 */
 	static String retainWholeIfDecimalPartZero(String s) {
 		if (s == null) {
+			return s;
+		}
+
+		try {
+			// using a big decimal here can also take care of scientific
+			// notions
+			BigDecimal d = new BigDecimal(s);
+			s = d.toPlainString();
+		} catch (NumberFormatException e) {
+			// not a number
 			return s;
 		}
 
