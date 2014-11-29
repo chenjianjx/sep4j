@@ -97,27 +97,27 @@ sep4j will call the properties' toString() methods to convert a property value t
 ```  
 
 Also, add it to the header map: 
-```java
-		<del>headerMap.put("birthDay", "Birth Date");</del>
-		headerMap.put("birthDayString", "Birth Date");
-```    
+
+>		<del>headerMap.put("birthDay", "Birth Date");</del>
+>		headerMap.put("birthDayString", "Birth Date");
+    
 
 * Can I let sep4j produce Numeric-typed cells or another type others than String ? 
-** No, you can't. This is how sep4j keeps itself simple.
+..* No, you can't. This is how sep4j keeps itself simple.
 
 ####Parse
 
 * sep4j will only take cells of the following types. Cells of other types such as formula, blank etc. will be parsed as null values. 
-** String
-** Boolean
-** Numeric 
-** Date (Actually it is a Numeric cell type + Date cell style)  
+..* String
+..* Boolean
+..* Numeric 
+..* Date (Actually it is a Numeric cell type + Date cell style)  
 
 * What if a cell is of String type in Excel, but its corresponding java property is of double? 
-** sep4j will do a guess for you, if the String's format in the cell is a valid number; You don't need another setter. Otherwise, sep4j will report a CellError saying "no suitable setter" 
+..* sep4j will do a guess for you, if the String's format in the cell is a valid number; You don't need another setter. if the String's format in the cell is not a valid number, sep4j will report a CellError saying "no suitable setter" 
 
 * A property of my class is not of any basic types. For example, it's of List<String>.  What to do?
-** Add a String-Typed setter to your class 
+..* Add a String-Typed setter to your class 
 
 ```java
 		public void setRoles(String rolesString){
@@ -127,7 +127,7 @@ Also, add it to the header map:
 ```
 
 * Null handling
-** Cell with null value will lead to a null property value.  However, if the property is of primitive type such as "int", "long", then a CellError will be raised.
+..* Cell with null value will lead to a null property value.  However, if the property is of primitive type such as "int", "long", then a CellError will be raised.
 
 ---
 
