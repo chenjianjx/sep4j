@@ -98,7 +98,7 @@ sep4j will call the properties' toString() methods to convert a property value t
 
 Also, add it to the header map: 
 ```java
-		-headerMap.put("birthDay", "Birth Date");-
+		<del>headerMap.put("birthDay", "Birth Date");</del>
 		headerMap.put("birthDayString", "Birth Date");
 ```    
 
