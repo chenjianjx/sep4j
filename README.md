@@ -108,6 +108,7 @@ Also, add it to the header map:
 ####Parse
 
 * sep4j will only take cells of the following types. Cells of other types such as formula, blank etc. will be parsed as null values. 
+
 > String
 > Boolean
 > Numeric 
@@ -127,6 +128,7 @@ Also, add it to the header map:
 ```
 
 * Null handling
+
 > Cell with null value will lead to a null property value.  However, if the property is of primitive type such as "int", "long", then a CellError will be raised.
 
 ---
