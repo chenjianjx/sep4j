@@ -52,6 +52,7 @@ Note: All cells generated will be String-Typed Cells.
 Will then get an excel file like 
 
 |User Id|First Name|Last Name|Fake Property|
+|-------|----------|---------|-------------|
 |1		|Lei		|Li		|!!ERROR!!	|
 |2		|Jim		|Green	|!!ERROR!!	|
 
