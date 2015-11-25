@@ -1,6 +1,35 @@
 ##sep4j
 The Simple Excel Processing for Java
 ---
+
+###Integrate the library to your project
+
+Edit your pom.xml 
+
+```xml
+	<repositories>
+		...
+		<repository>
+			<id>cjx-repo</id>
+			<url>https://github.com/chenjianjx/mvn-repo/raw/master</url>
+		</repository>
+	</repositories>
+
+	...
+	
+	<dependencies>
+	
+		<dependency>
+			<groupId>org.sep4j</groupId>
+			<artifactId>sep4j</artifactId>
+			<version>1.0</version>
+		</dependency>
+		...		
+
+```
+
+
+
 ###Basic Examples
 
 ####Save(Write)
