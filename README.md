@@ -9,10 +9,10 @@ Edit your pom.xml
 ```xml
 	<repositories>
 		...
-		<repository>
-			<id>cjx-repo</id>
-			<url>https://github.com/chenjianjx/mvn-repo/raw/master</url>
-		</repository>
+                <repository>
+                        <id>jitpack.io</id>
+                        <url>https://jitpack.io</url>
+                </repository>
 	</repositories>
 
 	...
@@ -20,9 +20,9 @@ Edit your pom.xml
 	<dependencies>
 	
 		<dependency>
-			<groupId>org.sep4j</groupId>
+			<groupId>com.github.chenjianjx</groupId>
 			<artifactId>sep4j</artifactId>
-			<version>1.0</version>
+			<version>1.1</version>
 		</dependency>
 		...		
 
