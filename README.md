@@ -1,5 +1,5 @@
 ##sep4j
-The Simple Excel Processing for Java
+Simple Excel Processing for Java
 ---
 
 ###Integrate the library to your project
