@@ -4,7 +4,7 @@
 	<groupId>com.github.chenjianjx</groupId>
 	<artifactId>sep4j</artifactId>
 	<packaging>jar</packaging>
-	<version>${git.branch}</version>
+	<version>1.1.1</version>
 	<name>Simple Excel Processing for Java</name>
 	<url>http://maven.apache.org</url>
 
