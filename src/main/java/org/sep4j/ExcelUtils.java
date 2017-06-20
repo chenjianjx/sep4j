@@ -203,6 +203,9 @@ public class ExcelUtils {
 		List<T> records = new ArrayList<T>();
 		for (int rowIndex = 1; rowIndex <= sheet.getLastRowNum(); rowIndex++) {
 			Row row = sheet.getRow(rowIndex);
+			if(row == null){
+				continue;
+			}
 			T record = parseDataRow(columnMetaMap, row, rowIndex, recordClass, cellErrors);
 			records.add(record);
 		}
