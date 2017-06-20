@@ -1,8 +1,8 @@
-##sep4j
+## sep4j
 Simple Excel Processing for Java
 ---
 
-###Integrate the library to your project
+### Integrate the library to your project
 
 Edit your pom.xml 
 
@@ -30,9 +30,9 @@ Edit your pom.xml
 
 
 
-###Basic Examples
+### Basic Examples
 
-####Save(Write)
+#### Save(Write)
 ```java
 
 		Collection<User> users = Arrays.asList(user1, user2);
@@ -54,7 +54,7 @@ You will get an excel file like
 
 Note: All cells generated will be String-Typed Cells. 
 
-####Parse(Read)
+#### Parse(Read)
 
 ```java
 		Map<String, String> reverseHeaderMap = new HashMap<String,String>();
@@ -67,8 +67,8 @@ Note: All cells generated will be String-Typed Cells.
 ```
  
 ---
-###Error Handling
-####Save
+### Error Handling
+#### Save
 
 ```java
 				
@@ -89,7 +89,7 @@ Will then get an excel file like
 |1		|Lei		|Li		|!!ERROR!!	|
 |2		|Jim		|Green	|!!ERROR!!	|
 
-####Parse
+#### arse
 
 ```java
 		List<CellError> cellErrors = new ArrayList<CellError>();
@@ -109,8 +109,8 @@ Will then get an excel file like
 ```
 ---
 
-###Type Conversions
-####Save
+### Type Conversions
+#### Save
 sep4j will call the properties' toString() methods to convert a property value to a String, and then write them to an excel file as String-typed cells.
 
 * What if I want the property printed another way instead of toString(), for example, to format a date in Chinese style? 
@@ -138,7 +138,7 @@ Also, add it to the header map:
 * Can I let sep4j produce Numeric-typed cells or another type others than String ? 
     - No, you can't. This is how sep4j keeps itself simple.
 
-####Parse
+#### Parse
 
 * sep4j will only take cells of the following types. Cells of other types such as formula, blank etc. will be parsed as null values. 
     - String
@@ -164,9 +164,9 @@ Also, add it to the header map:
 
 ---
 
-###Misc
+### Misc
 
-####Best Practice for Date-typed properties during parsing
+#### Best Practice for Date-typed properties during parsing
 A date column may have both String-typed cells and Date-typed cells. You need to accommodate both. 
 
 ```java
