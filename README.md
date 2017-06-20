@@ -22,7 +22,7 @@ Edit your pom.xml
 		<dependency>
 			<groupId>com.github.chenjianjx</groupId>
 			<artifactId>sep4j</artifactId>
-			<version>1.1</version>
+			<version>1.1.1</version>
 		</dependency>
 		...		
 
