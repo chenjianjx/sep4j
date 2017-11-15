@@ -23,6 +23,19 @@
 	</properties>
 
 
+	<developers>
+		<developer>
+			<name>Jian Chen</name>
+			<email>chenjianjx@gmail.com</email>
+			<organizationUrl>http://www.chenjianjx.com</organizationUrl>
+		</developer>
+	</developers>
+	<scm>
+		<connection>scm:git:git://github.com/chenjianjx/sep4j.git</connection>
+		<developerConnection>scm:git:ssh://github.com:chenjianjx/sep4j.git</developerConnection>
+		<url>https://github.com/chenjianjx/sep4j</url>
+	</scm>
+
 	<distributionManagement>
 		<snapshotRepository>
 			<id>ossrh</id>
