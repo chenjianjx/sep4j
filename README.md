@@ -7,22 +7,14 @@ Simple Spreadsheet Processing for Java
 Edit your pom.xml 
 
 ```xml
-	<repositories>
-		...
-                <repository>
-                        <id>jitpack.io</id>
-                        <url>https://jitpack.io</url>
-                </repository>
-	</repositories>
-
-	...
-	
+ 
+ 
 	<dependencies>
 	
 		<dependency>
 			<groupId>com.github.chenjianjx</groupId>
 			<artifactId>sep4j</artifactId>
-			<version>1.1.1</version>
+			<version>1.2.0-SNAPSHOT</version>
 		</dependency>
 		...		
 
