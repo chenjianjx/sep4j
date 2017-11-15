@@ -26,17 +26,20 @@ Edit your pom.xml
 
 #### Save(Write)
 ```java
-
-		Collection<User> users = Arrays.asList(user1, user2);
-		LinkedHashMap<String, String> headerMap = new LinkedHashMap<String, String>();
-		headerMap.put("userId", "User Id");  //"userId" is a property of User class.
-							// "User Id" will be the column header in the spreadsheet.
+		
+		Map<String, String> headerMap = new LinkedHashMap<String, String>();
+		headerMap.put("userId", "User Id"); // "userId" is a property of the javabeans you are going to save.
+							// "User Id" will be the corresponding column header in the spreadsheet.
 		headerMap.put("firstName", "First Name");
 		headerMap.put("lastName", "Last Name");
-		
-		Ssio.save(headerMap, users, outputStream);
 
+		Ssio.save(headerMap, users, spreadsheetOutputStream);		
 ```
+or if you use Guava, you can just
+```java
+		Ssio.save(ImmutableMap.of("userId", "User Id", "firstName","First Name", "lastName", "Last Name"), userList, spreadsheetOutputStream);
+```
+
 You will get an spreadsheet file like 
 
 |User Id|First Name|Last Name|
@@ -55,8 +58,14 @@ Note: All cells generated will be String-Typed Cells.
 		reverseHeaderMap.put("First Name", "firstName");
 		reverseHeaderMap.put("Last Name","lastName");
 		
-		List<User> users = Ssio.parseIgnoringErrors(reverseHeaderMap, inputStream, User.class);
+		List<User> users = Ssio.parseIgnoringErrors(reverseHeaderMap, spreadsheetInputStream, User.class);
 ```
+or if you use Guava, you can just
+```java
+		List<User> users = Ssio.parse(ImmutableMap.of("User Id","userId","First Name","firstName","Last Name","lastName"),
+							spreadsheetInputStream,  User.class);
+```
+
  
 ---
 ### Error Handling

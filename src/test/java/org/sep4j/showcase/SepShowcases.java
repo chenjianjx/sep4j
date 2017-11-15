@@ -25,10 +25,13 @@ import org.apache.commons.lang.builder.ToStringStyle;
 import org.apache.commons.lang.time.DateFormatUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+import org.junit.Test;
 import org.sep4j.CellError;
 import org.sep4j.DatumError;
-import org.sep4j.Ssio;
 import org.sep4j.InvalidHeaderRowException;
+import org.sep4j.Ssio;
+
+import com.google.common.collect.ImmutableMap;
 
 /**
  * for documentation only
@@ -37,98 +40,165 @@ import org.sep4j.InvalidHeaderRowException;
  */
 public class SepShowcases {
 
-	public static void main(String[] args) throws IOException {
-		parse();
-	
+	@Test
+	public void save() throws IOException {
+		doSave();
 	}
-	
-	private static void parse() throws IOException {
-		File file = save();
-		InputStream inputStream = toByteArrayInputStreamAndClose(new FileInputStream(file));
-		
-		Map<String, String> reverseHeaderMap = new HashMap<String,String>();
-		reverseHeaderMap.put("User Id", "userId");  //"User Id" is a column header in the spreadsheet."userId" is the corresponding property of User class.
+
+	@Test
+	public void saveWithGuava() throws IOException {
+
+		Collection<User> userList = buildTestUsers();
+		ByteArrayOutputStream spreadsheetOutputStream = new ByteArrayOutputStream();
+
+		Ssio.save(ImmutableMap.of("userId", "User Id", "firstName",
+				"First Name", "lastName", "Last Name"), userList, spreadsheetOutputStream);
+
+		byte[] spreadsheet = spreadsheetOutputStream.toByteArray();
+		File theFile = createFile("saveWithGuava");
+		FileUtils.writeByteArrayToFile(theFile, spreadsheet);
+		System.out.println("File saved as " + theFile.getAbsolutePath());
+	}
+
+	@Test
+	public void parse() throws IOException {
+		File file = doSave();
+		InputStream spreadsheetInputStream = toByteArrayInputStreamAndClose(new FileInputStream(
+				file));
+
+		Map<String, String> reverseHeaderMap = new HashMap<String, String>();
+		reverseHeaderMap.put("User Id", "userId"); // "User Id" is a column
+													// header in the
+													// spreadsheet."userId" is
+													// the corresponding
+													// property of User class.
 		reverseHeaderMap.put("First Name", "firstName");
-		reverseHeaderMap.put("Last Name","lastName");
-		
+		reverseHeaderMap.put("Last Name", "lastName");
+
 		List<CellError> cellErrors = new ArrayList<CellError>();
-		try{			
-			List<User> users = Ssio.parse(reverseHeaderMap, inputStream, cellErrors, User.class);
-		}catch (InvalidFormatException e) {
+		try {
+			@SuppressWarnings("unused")
+			List<User> users = Ssio.parse(reverseHeaderMap, spreadsheetInputStream,
+					cellErrors, User.class);
+		} catch (InvalidFormatException e) {
 			System.err.println("Not a valid spreadsheet file");
 		} catch (InvalidHeaderRowException e) {
-			System.err.println("The column headers of your spreadsheet file donot match what we need");
+			System.err
+					.println("The column headers of your spreadsheet file donot match what we need");
 		}
-		
+
 		for (CellError ce : cellErrors) {
-			System.err.println(MessageFormat.format("failed to parse a cell: rowIndexOneBased = {0}, columnIndexOneBased = {1}, propName = \"{2}\", headerText = \"{3}\", cause = {4} ", 
-					ce.getRowIndexOneBased(),ce.getColumnIndexOneBased(), ce.getPropName(),ce.getHeaderText(), ce.getCause()));
+			System.err
+					.println(MessageFormat
+							.format("failed to parse a cell: rowIndexOneBased = {0}, columnIndexOneBased = {1}, propName = \"{2}\", headerText = \"{3}\", cause = {4} ",
+									ce.getRowIndexOneBased(),
+									ce.getColumnIndexOneBased(),
+									ce.getPropName(), ce.getHeaderText(),
+									ce.getCause()));
 		}
-		
-		
-		//List<User> users = Ssio.parseIgnoringErrors(reverseHeaderMap, inputStream, User.class);
-		
-		//System.out.println(users);
+
+		// List<User> users = Ssio.parseIgnoringErrors(reverseHeaderMap,
+		// inputStream, User.class);
+
+		// System.out.println(users);
 	}
-	
 
-	private static File save() throws IOException {
+	@Test
+	public void parseWithGuava() throws IOException {
+		File file = doSave();
+		InputStream spreadsheetInputStream = toByteArrayInputStreamAndClose(new FileInputStream(
+				file));
 
+		List<CellError> cellErrors = new ArrayList<CellError>();
+		try {
+			@SuppressWarnings("unused")
+			List<User> users = Ssio.parse(ImmutableMap.of("User Id", "userId",
+					"First Name", "firstName", "Last Name", "lastName"),
+					spreadsheetInputStream, cellErrors, User.class);
+		} catch (InvalidFormatException e) {
+			System.err.println("Not a valid spreadsheet file");
+		} catch (InvalidHeaderRowException e) {
+			System.err
+					.println("The column headers of your spreadsheet file donot match what we need");
+		}
 
+		for (CellError ce : cellErrors) {
+			System.err
+					.println(MessageFormat
+							.format("failed to parse a cell: rowIndexOneBased = {0}, columnIndexOneBased = {1}, propName = \"{2}\", headerText = \"{3}\", cause = {4} ",
+									ce.getRowIndexOneBased(),
+									ce.getColumnIndexOneBased(),
+									ce.getPropName(), ce.getHeaderText(),
+									ce.getCause()));
+		}
 
+		// List<User> users = Ssio.parseIgnoringErrors(reverseHeaderMap,
+		// inputStream, User.class);
+
+		// System.out.println(users);
+	}
+
+	private File doSave() throws IOException {
+		Collection<User> userList = buildTestUsers();
+
+		ByteArrayOutputStream spreadsheetOutputStream = new ByteArrayOutputStream();
+		Map<String, String> headerMap = new LinkedHashMap<String, String>();
+		headerMap.put("userId", "User Id"); // "userId" is a property of User
+											// class. "User Id" will be the
+											// corresponding column header in
+											// the spreadsheet.
+		headerMap.put("firstName", "First Name");
+		headerMap.put("lastName", "Last Name");
+		headerMap.put("birthDay", "Birth Date");
+		headerMap.put("birthDayString", "Birth Date");
+
+		// Ssio.save(headerMap, users, outputStream);
+
+		/*** show case error handling ***/
+
+		// ////to collect the errors
+		List<DatumError> datumErrors = new ArrayList<DatumError>();
+		headerMap.put("fakeProperty", "Fake Property"); // try to write an
+														// non-exsting property
+		Ssio.save(headerMap, userList, spreadsheetOutputStream, "!!ERROR!!", datumErrors);
+		for (DatumError de : datumErrors) {// here to handle the errors
+			System.err
+					.println(MessageFormat
+							.format("Error: recordIndex = {0}, propName = \"{1}\", cause = {2}",
+									de.getRecordIndex(), de.getPropName(),
+									de.getCause()));
+		}
+
+		byte[] spreadsheet = spreadsheetOutputStream.toByteArray();
+		File theFile = createFile("save");
+		FileUtils.writeByteArrayToFile(theFile, spreadsheet);
+		return theFile;
+	}
+
+	private Collection<User> buildTestUsers() {
 		User user1 = new User();
 		user1.setUserId(1);
 		user1.setFirstName("Lei");
 		user1.setLastName("Li");
-		
-		
-		
+
 		User user2 = new User();
 		user2.setUserId(2);
 		user2.setFirstName("Jim");
 		user2.setLastName("Green");
 
-		
-		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-		
-		Collection<User> users = Arrays.asList(user1, user2);
-		LinkedHashMap<String, String> headerMap = new LinkedHashMap<String, String>();
-		headerMap.put("userId", "User Id");  //"userId" is a property of User class. "User Id" will be the corresponding column header in the spreadsheet.
-		headerMap.put("firstName", "First Name");
-		headerMap.put("lastName", "Last Name");
-		headerMap.put("birthDay", "Birth Date");
-		headerMap.put("birthDayString", "Birth Date");
-		
-		//Ssio.save(headerMap, users, outputStream);
-		
-		
-		/***show case error handling***/		
-		
-		//////to collect the errors		
-		List<DatumError> datumErrors = new ArrayList<DatumError>();
-		headerMap.put("fakeProperty", "Fake Property"); //try to write an non-exsting property
-		Ssio.save(headerMap, users, outputStream, "!!ERROR!!", datumErrors); 		
-		for (DatumError de : datumErrors) {//here to handle the errors
-			System.err.println(MessageFormat.format("Error: recordIndex = {0}, propName = \"{1}\", cause = {2}", de.getRecordIndex(), de.getPropName(), de.getCause()));			
-		}
-		
-		
-		byte[] spreadsheet = outputStream.toByteArray();
-		File theFile = createFile("save");
-		FileUtils.writeByteArrayToFile(theFile, spreadsheet);
-		return theFile;
-
+		Collection<User> userList = Arrays.asList(user1, user2);
+		return userList;
 	}
 
-	private static File createFile(String prefix) {
+	private File createFile(String prefix) {
 		File dir = new File(System.getProperty("user.home"), "/temp/sep");
 		dir.mkdirs();
 		String filename = prefix + System.currentTimeMillis() + ".xlsx";
 		File file = new File(dir, filename);
 		return file;
 	}
-	
-	private static ByteArrayInputStream toByteArrayInputStreamAndClose(InputStream in) {
+
+	private ByteArrayInputStream toByteArrayInputStreamAndClose(InputStream in) {
 		try {
 			byte[] bytes = IOUtils.toByteArray(in);
 			return new ByteArrayInputStream(bytes);
@@ -140,7 +210,6 @@ public class SepShowcases {
 
 	}
 
-
 	@SuppressWarnings("unused")
 	private static final class User {
 
@@ -148,9 +217,9 @@ public class SepShowcases {
 		private String firstName;
 		private String lastName;
 		private Date birthDay;
-		
+
 		private List<String> roles;
-		
+
 		public long getUserId() {
 			return userId;
 		}
@@ -175,42 +244,40 @@ public class SepShowcases {
 			this.lastName = lastName;
 		}
 
-
 		public Date getBirthDay() {
 			return birthDay;
 		}
-		
-		public String getBirthDayString(){
-			if(birthDay == null){
+
+		public String getBirthDayString() {
+			if (birthDay == null) {
 				return null;
-			}			
-			return DateFormatUtils.format(birthDay, "yyyy-MM-dd");			
+			}
+			return DateFormatUtils.format(birthDay, "yyyy-MM-dd");
 		}
 
 		/**
 		 * if the cell is of Date type
+		 * 
 		 * @param birthDay
 		 */
 		public void setBirthDay(Date birthDay) {
 			this.birthDay = birthDay;
 		}
-		
+
 		/**
 		 * if the cell is of String type
+		 * 
 		 * @param birthDayString
 		 * @throws ParseException
 		 */
 		public void setBirthDay(String birthDayString) throws ParseException {
-			if(birthDayString == null){
+			if (birthDayString == null) {
 				return;
 			}
-			birthDay = DateUtils.parseDate(birthDayString, new String[]{"yyyy-MM-dd"});			
+			birthDay = DateUtils.parseDate(birthDayString,
+					new String[] { "yyyy-MM-dd" });
 		}
 
-		
-		
-		
-		
 		public List<String> getRoles() {
 			return roles;
 		}
@@ -218,16 +285,16 @@ public class SepShowcases {
 		public void setRoles(List<String> roles) {
 			this.roles = roles;
 		}
-		
-		public void setRoles(String rolesString){
+
+		public void setRoles(String rolesString) {
 			String[] roleArray = StringUtils.split(rolesString, ",");
 			this.setRoles(Arrays.asList(roleArray));
 		}
-		
 
 		@Override
 		public String toString() {
-			return ToStringBuilder.reflectionToString(this, ToStringStyle.SHORT_PREFIX_STYLE);
+			return ToStringBuilder.reflectionToString(this,
+					ToStringStyle.SHORT_PREFIX_STYLE);
 		}
 	}
 

@@ -54,7 +54,7 @@ public class Ssio {
 	 *            the java type of records
 	 * 
 	 */
-	public static <T> void save(LinkedHashMap<String, String> headerMap,
+	public static <T> void save(Map<String, String> headerMap,
 			Collection<T> records, OutputStream outputStream) {
 		save(headerMap, records, outputStream, null, null, true);
 	}
@@ -77,7 +77,7 @@ public class Ssio {
 	 * @param <T>
 	 *            the java type of records
 	 */
-	public static <T> void save(LinkedHashMap<String, String> headerMap,
+	public static <T> void save(Map<String, String> headerMap,
 			Collection<T> records, OutputStream outputStream,
 			String datumErrPlaceholder) {
 		save(headerMap, records, outputStream, datumErrPlaceholder, null, true);
@@ -104,7 +104,7 @@ public class Ssio {
 	 * @param <T>
 	 *            the java type of records
 	 */
-	public static <T> void save(LinkedHashMap<String, String> headerMap,
+	public static <T> void save(Map<String, String> headerMap,
 			Collection<T> records, OutputStream outputStream,
 			String datumErrPlaceholder, List<DatumError> datumErrors) {
 		save(headerMap, records, outputStream, datumErrPlaceholder,
@@ -133,7 +133,7 @@ public class Ssio {
 	 *            the java type of records
 	 */
 	public static <T> void saveIfNoDatumError(
-			LinkedHashMap<String, String> headerMap, Collection<T> records,
+			Map<String, String> headerMap, Collection<T> records,
 			OutputStream outputStream, String datumErrPlaceholder,
 			List<DatumError> datumErrors) {
 		save(headerMap, records, outputStream, datumErrPlaceholder,
@@ -252,7 +252,7 @@ public class Ssio {
 	 * 
 	 * 
 	 */
-	static <T> void save(LinkedHashMap<String, String> headerMap,
+	static <T> void save(Map<String, String> headerMap,
 			Collection<T> records, OutputStream outputStream,
 			String datumErrPlaceholder, List<DatumError> datumErrors,
 			boolean stillSaveIfDataError) {
@@ -332,7 +332,7 @@ public class Ssio {
 		}
 	}
 
-	static void validateHeaderMap(LinkedHashMap<String, String> headerMap) {
+	static void validateHeaderMap(Map<String, String> headerMap) {
 		if (headerMap == null || headerMap.isEmpty()) {
 			throw new IllegalArgumentException(
 					"the headerMap can not be null or empty");
@@ -555,7 +555,7 @@ public class Ssio {
 		return columnMetaMap;
 	}
 
-	private static Row createHeaders(LinkedHashMap<String, String> headerMap,
+	private static Row createHeaders(Map<String, String> headerMap,
 			Sheet sheet) {
 		CellStyle style = sheet.getWorkbook().createCellStyle();
 		style.setFillForegroundColor(IndexedColors.YELLOW.getIndex());
@@ -579,7 +579,7 @@ public class Ssio {
 		return header;
 	}
 
-	private static <T> Row createRow(LinkedHashMap<String, String> headerMap,
+	private static <T> Row createRow(Map<String, String> headerMap,
 			T record, int recordIndex, Sheet sheet, int rowIndex,
 			String datumErrPlaceholder, List<DatumError> datumErrors) {
 		Row row = sheet.createRow(rowIndex);
