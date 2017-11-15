@@ -27,7 +27,7 @@ import org.apache.commons.lang.time.DateUtils;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.sep4j.CellError;
 import org.sep4j.DatumError;
-import org.sep4j.ExcelUtils;
+import org.sep4j.Ssio;
 import org.sep4j.InvalidHeaderRowException;
 
 /**
@@ -47,17 +47,17 @@ public class SepShowcases {
 		InputStream inputStream = toByteArrayInputStreamAndClose(new FileInputStream(file));
 		
 		Map<String, String> reverseHeaderMap = new HashMap<String,String>();
-		reverseHeaderMap.put("User Id", "userId");  //"User Id" is a column header in the excel."userId" is the corresponding property of User class.
+		reverseHeaderMap.put("User Id", "userId");  //"User Id" is a column header in the spreadsheet."userId" is the corresponding property of User class.
 		reverseHeaderMap.put("First Name", "firstName");
 		reverseHeaderMap.put("Last Name","lastName");
 		
 		List<CellError> cellErrors = new ArrayList<CellError>();
 		try{			
-			List<User> users = ExcelUtils.parse(reverseHeaderMap, inputStream, cellErrors, User.class);
+			List<User> users = Ssio.parse(reverseHeaderMap, inputStream, cellErrors, User.class);
 		}catch (InvalidFormatException e) {
-			System.err.println("Not a valid excel file");
+			System.err.println("Not a valid spreadsheet file");
 		} catch (InvalidHeaderRowException e) {
-			System.err.println("The column headers of your excel file donot match what we need");
+			System.err.println("The column headers of your spreadsheet file donot match what we need");
 		}
 		
 		for (CellError ce : cellErrors) {
@@ -66,7 +66,7 @@ public class SepShowcases {
 		}
 		
 		
-		//List<User> users = ExcelUtils.parseIgnoringErrors(reverseHeaderMap, inputStream, User.class);
+		//List<User> users = Ssio.parseIgnoringErrors(reverseHeaderMap, inputStream, User.class);
 		
 		//System.out.println(users);
 	}
@@ -93,13 +93,13 @@ public class SepShowcases {
 		
 		Collection<User> users = Arrays.asList(user1, user2);
 		LinkedHashMap<String, String> headerMap = new LinkedHashMap<String, String>();
-		headerMap.put("userId", "User Id");  //"userId" is a property of User class. "User Id" will be the corresponding column header in the excel.
+		headerMap.put("userId", "User Id");  //"userId" is a property of User class. "User Id" will be the corresponding column header in the spreadsheet.
 		headerMap.put("firstName", "First Name");
 		headerMap.put("lastName", "Last Name");
 		headerMap.put("birthDay", "Birth Date");
 		headerMap.put("birthDayString", "Birth Date");
 		
-		//ExcelUtils.save(headerMap, users, outputStream);
+		//Ssio.save(headerMap, users, outputStream);
 		
 		
 		/***show case error handling***/		
@@ -107,15 +107,15 @@ public class SepShowcases {
 		//////to collect the errors		
 		List<DatumError> datumErrors = new ArrayList<DatumError>();
 		headerMap.put("fakeProperty", "Fake Property"); //try to write an non-exsting property
-		ExcelUtils.save(headerMap, users, outputStream, "!!ERROR!!", datumErrors); 		
+		Ssio.save(headerMap, users, outputStream, "!!ERROR!!", datumErrors); 		
 		for (DatumError de : datumErrors) {//here to handle the errors
 			System.err.println(MessageFormat.format("Error: recordIndex = {0}, propName = \"{1}\", cause = {2}", de.getRecordIndex(), de.getPropName(), de.getCause()));			
 		}
 		
 		
-		byte[] excel = outputStream.toByteArray();
+		byte[] spreadsheet = outputStream.toByteArray();
 		File theFile = createFile("save");
-		FileUtils.writeByteArrayToFile(theFile, excel);
+		FileUtils.writeByteArrayToFile(theFile, spreadsheet);
 		return theFile;
 
 	}

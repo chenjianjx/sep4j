@@ -1,5 +1,5 @@
 ## sep4j
-Simple Excel Processing for Java
+Simple Spreadsheet Processing for Java
 ---
 
 ### Integrate the library to your project
@@ -38,14 +38,14 @@ Edit your pom.xml
 		Collection<User> users = Arrays.asList(user1, user2);
 		LinkedHashMap<String, String> headerMap = new LinkedHashMap<String, String>();
 		headerMap.put("userId", "User Id");  //"userId" is a property of User class.
-							// "User Id" will be the column header in the excel.
+							// "User Id" will be the column header in the spreadsheet.
 		headerMap.put("firstName", "First Name");
 		headerMap.put("lastName", "Last Name");
 		
-		ExcelUtils.save(headerMap, users, outputStream);
+		Ssio.save(headerMap, users, outputStream);
 
 ```
-You will get an excel file like 
+You will get an spreadsheet file like 
 
 |User Id|First Name|Last Name|
 |-------|----------|---------|
@@ -58,12 +58,12 @@ Note: All cells generated will be String-Typed Cells.
 
 ```java
 		Map<String, String> reverseHeaderMap = new HashMap<String,String>();
-		reverseHeaderMap.put("User Id", "userId");  //"User Id" is a column header in the excel.
+		reverseHeaderMap.put("User Id", "userId");  //"User Id" is a column header in the spreadsheet.
 								//"userId" is the corresponding property of User class.
 		reverseHeaderMap.put("First Name", "firstName");
 		reverseHeaderMap.put("Last Name","lastName");
 		
-		List<User> users = ExcelUtils.parseIgnoringErrors(reverseHeaderMap, inputStream, User.class);
+		List<User> users = Ssio.parseIgnoringErrors(reverseHeaderMap, inputStream, User.class);
 ```
  
 ---
@@ -74,7 +74,7 @@ Note: All cells generated will be String-Typed Cells.
 				
 		List<DatumError> datumErrors = new ArrayList<DatumError>(); //to collect the errors
 		headerMap.put("fakeProperty", "Fake Property"); //try to write an non-existing property
-		ExcelUtils.save(headerMap, users, outputStream, "!!ERROR!!", datumErrors); 		
+		Ssio.save(headerMap, users, outputStream, "!!ERROR!!", datumErrors); 		
 		for (DatumError de : datumErrors) {//here to handle the errors
 			System.err.println(MessageFormat.format("Error: recordIndex = {0}, 
 			propName = \"{1}\", cause = {2}",
@@ -82,7 +82,7 @@ Note: All cells generated will be String-Typed Cells.
 		}
 ```		
 
-Will then get an excel file like 
+Will then get an spreadsheet file like 
 
 |User Id|First Name|Last Name|Fake Property|
 |-------|----------|---------|-------------|
@@ -94,11 +94,11 @@ Will then get an excel file like
 ```java
 		List<CellError> cellErrors = new ArrayList<CellError>();
 		try{			
-			List<User> users = ExcelUtils.parse(reverseHeaderMap, inputStream, cellErrors, User.class);
+			List<User> users = Ssio.parse(reverseHeaderMap, inputStream, cellErrors, User.class);
 		}catch (InvalidFormatException e) {
-			System.err.println("Not a valid excel file");
+			System.err.println("Not a valid spreadsheet file");
 		} catch (InvalidHeaderRowException e) {
-			System.err.println("The column headers of your excel file do not match what we need");
+			System.err.println("The column headers of your spreadsheet file do not match what we need");
 		}		
 		for (CellError ce : cellErrors) {
 			System.err.println(MessageFormat.format("failed to parse a cell: rowIndexOneBased = {0},
@@ -111,7 +111,7 @@ Will then get an excel file like
 
 ### Type Conversions
 #### Save
-sep4j will call the properties' toString() methods to convert a property value to a String, and then write them to an excel file as String-typed cells.
+sep4j will call the properties' toString() methods to convert a property value to a String, and then write them to an spreadsheet file as String-typed cells.
 
 * What if I want the property printed another way instead of toString(), for example, to format a date in Chinese style? 
     - Create a new, String-typed property in your class by adding a getter method. 
@@ -146,7 +146,7 @@ Also, add it to the header map:
     - Numeric 
     - Date (Actually it is a Numeric cell type + Date cell style)  
 
-* What if a cell is of String type in Excel, but its corresponding java property is of double? 
+* What if a cell is of String type in the spreadsheet, but its corresponding java property is of double? 
     - sep4j will do a guess for you, if the String's format in the cell is a valid number; You don't need another setter. if the String's format in the cell is not a valid number, sep4j will report a CellError saying "no suitable setter" 
 
 * A property of my class is not of any basic types. For example, it's of List<String>.  What to do?

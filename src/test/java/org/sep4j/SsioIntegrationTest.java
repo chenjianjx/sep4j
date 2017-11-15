@@ -40,7 +40,7 @@ import org.junit.rules.ExpectedException;
  * 
  */
 
-public class ExcelUtilsIntegrationTest {
+public class SsioIntegrationTest {
 
 	@Rule
 	public ExpectedException expectedEx = ExpectedException.none();
@@ -57,10 +57,10 @@ public class ExcelUtilsIntegrationTest {
 		List<DatumError> datumErrors = new ArrayList<DatumError>();
 
 		// save it
-		ExcelUtils.saveIfNoDatumError(headerMap, records, outputStream, null, datumErrors);
+		Ssio.saveIfNoDatumError(headerMap, records, outputStream, null, datumErrors);
 
-		byte[] excel = outputStream.toByteArray();
-		Assert.assertEquals(0, excel.length);
+		byte[] spreadsheet = outputStream.toByteArray();
+		Assert.assertEquals(0, spreadsheet.length);
 		Assert.assertEquals(1, datumErrors.size());
 
 	}
@@ -80,14 +80,14 @@ public class ExcelUtilsIntegrationTest {
 		List<DatumError> datumErrors = new ArrayList<DatumError>();
 
 		// save it
-		ExcelUtils.save(headerMap, records, outputStream, datumErrPlaceholder, datumErrors);
-		byte[] excel = outputStream.toByteArray();
+		Ssio.save(headerMap, records, outputStream, datumErrPlaceholder, datumErrors);
+		byte[] spreadsheet = outputStream.toByteArray();
 
 		// do a save for human eye check
-		FileUtils.writeByteArrayToFile(createFile("saveTest_ValidAndInvalid"), excel);
+		FileUtils.writeByteArrayToFile(createFile("saveTest_ValidAndInvalid"), spreadsheet);
 
 		// then parse it
-		Workbook workbook = WorkbookFactory.create(new ByteArrayInputStream(excel));
+		Workbook workbook = WorkbookFactory.create(new ByteArrayInputStream(spreadsheet));
 
 		/*** do assertions ***/
 		Sheet sheet = workbook.getSheetAt(0);
@@ -136,14 +136,14 @@ public class ExcelUtilsIntegrationTest {
 		Collection<ITRecord> records = Arrays.asList(record);
 		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 		// save it
-		ExcelUtils.save(headerMap, records, outputStream);
-		byte[] excel = outputStream.toByteArray();
+		Ssio.save(headerMap, records, outputStream);
+		byte[] spreadsheet = outputStream.toByteArray();
 
 		// do a save for human eye check
-		FileUtils.writeByteArrayToFile(createFile("saveTest_IngoringErrors"), excel);
+		FileUtils.writeByteArrayToFile(createFile("saveTest_IngoringErrors"), spreadsheet);
 
 		// then parse it
-		Workbook workbook = WorkbookFactory.create(new ByteArrayInputStream(excel));
+		Workbook workbook = WorkbookFactory.create(new ByteArrayInputStream(spreadsheet));
 
 		/*** do assertions ***/
 		Sheet sheet = workbook.getSheetAt(0);
@@ -174,14 +174,14 @@ public class ExcelUtilsIntegrationTest {
 
 		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 		// save it
-		ExcelUtils.save(ITRecord.getHeaderMap(), null, outputStream);
-		byte[] excel = outputStream.toByteArray();
+		Ssio.save(ITRecord.getHeaderMap(), null, outputStream);
+		byte[] spreadsheet = outputStream.toByteArray();
 
 		// do a save for human eye check
-		FileUtils.writeByteArrayToFile(createFile("saveTest_HeadersOnly"), excel);
+		FileUtils.writeByteArrayToFile(createFile("saveTest_HeadersOnly"), spreadsheet);
 
 		// then parse it
-		Workbook workbook = WorkbookFactory.create(new ByteArrayInputStream(excel));
+		Workbook workbook = WorkbookFactory.create(new ByteArrayInputStream(spreadsheet));
 
 		/*** do assertions ***/
 		Sheet sheet = workbook.getSheetAt(0);
@@ -210,14 +210,14 @@ public class ExcelUtilsIntegrationTest {
 		List<DatumError> datumErrors = new ArrayList<DatumError>();
 
 		// save it
-		ExcelUtils.save(headerMap, records, outputStream, null, datumErrors);
-		byte[] excel = outputStream.toByteArray();
+		Ssio.save(headerMap, records, outputStream, null, datumErrors);
+		byte[] spreadsheet = outputStream.toByteArray();
 
 		// do a save for human eye check
-		FileUtils.writeByteArrayToFile(createFile("saveTest_BigNumber"), excel);
+		FileUtils.writeByteArrayToFile(createFile("saveTest_BigNumber"), spreadsheet);
 
 		// then parse it
-		Workbook workbook = WorkbookFactory.create(new ByteArrayInputStream(excel));
+		Workbook workbook = WorkbookFactory.create(new ByteArrayInputStream(spreadsheet));
 
 		/*** do assertions ***/
 		Sheet sheet = workbook.getSheetAt(0);
@@ -238,13 +238,13 @@ public class ExcelUtilsIntegrationTest {
 	@Test(expected = InvalidHeaderRowException.class)
 	public void parseTest_InvalidHeader() throws InvalidFormatException, InvalidHeaderRowException {
 		ByteArrayInputStream in = toByteArrayInputStreamAndClose(this.getClass().getResourceAsStream("/parse-test-all-headers-wrong.xlsx"));
-		ExcelUtils.parse(ITRecord.getReverseHeaderMap(), in, null, ITRecord.class);
+		Ssio.parse(ITRecord.getReverseHeaderMap(), in, null, ITRecord.class);
 	}
 
 	@Test
 	public void parseTest_Excel97() throws InvalidFormatException, InvalidHeaderRowException {
 		ByteArrayInputStream in = toByteArrayInputStreamAndClose(this.getClass().getResourceAsStream("/parse-test-excel97.xls"));
-		List<ITRecord> list = ExcelUtils.parse(ITRecord.getReverseHeaderMap(), in, null, ITRecord.class);
+		List<ITRecord> list = Ssio.parse(ITRecord.getReverseHeaderMap(), in, null, ITRecord.class);
 		Assert.assertEquals((short) 1, list.get(0).getPrimShort());
 	}
 
@@ -252,7 +252,7 @@ public class ExcelUtilsIntegrationTest {
 	public void parseTest_DataHalfCorrect() throws InvalidFormatException, InvalidHeaderRowException {
 		ByteArrayInputStream in = toByteArrayInputStreamAndClose(this.getClass().getResourceAsStream("/parse-test-data-half-correct.xlsx"));
 		List<CellError> cellErrors = new ArrayList<CellError>();
-		List<ITRecord> records = ExcelUtils.parse(ITRecord.getReverseHeaderMap(), in, cellErrors, ITRecord.class);
+		List<ITRecord> records = Ssio.parse(ITRecord.getReverseHeaderMap(), in, cellErrors, ITRecord.class);
 
 		ITRecord record = records.get(0);
 		Assert.assertEquals(1, records.size());
@@ -270,7 +270,7 @@ public class ExcelUtilsIntegrationTest {
 	public void parseTest_AllStringCells() throws InvalidFormatException, InvalidHeaderRowException {
 		ByteArrayInputStream in = toByteArrayInputStreamAndClose(this.getClass().getResourceAsStream("/parse-test-all-string-cells-input.xlsx"));
 		List<CellError> cellErrors = new ArrayList<CellError>();
-		List<ITRecord> records = ExcelUtils.parse(ITRecord.getReverseHeaderMap(), in, cellErrors, ITRecord.class);
+		List<ITRecord> records = Ssio.parse(ITRecord.getReverseHeaderMap(), in, cellErrors, ITRecord.class);
 
 		// assertions
 		ITRecord record = records.get(0);
@@ -302,7 +302,7 @@ public class ExcelUtilsIntegrationTest {
 	public void parseTest_FreeTypeCells() throws InvalidFormatException, InvalidHeaderRowException {
 		ByteArrayInputStream in = toByteArrayInputStreamAndClose(this.getClass().getResourceAsStream("/parse-test-all-free-type-input.xlsx"));
 		List<CellError> cellErrors = new ArrayList<CellError>();
-		List<ITRecord> records = ExcelUtils.parse(ITRecord.getReverseHeaderMap(), in, cellErrors, ITRecord.class);
+		List<ITRecord> records = Ssio.parse(ITRecord.getReverseHeaderMap(), in, cellErrors, ITRecord.class);
 
 		// assertions
 		ITRecord record = records.get(0);
