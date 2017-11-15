@@ -5,6 +5,7 @@ It's a wrapper of Apache POI, with which you can do javabeans <-> spreadsheet co
 
 ### Quick Start
 
+#### pom.xml
 ```xml
 
 <dependencies>
@@ -30,7 +31,8 @@ Ssio.save(headerMap, users, spreadsheetOutputStream);
 ```
 or if you use Guava, you can just
 ```java
-Ssio.save(ImmutableMap.of("userId", "User Id", "firstName","First Name", "lastName", "Last Name"), userList, spreadsheetOutputStream);
+Ssio.save(ImmutableMap.of("userId", "User Id", "firstName","First Name", "lastName", "Last Name"), 
+	userList, spreadsheetOutputStream);
 ```
 
 You will get an spreadsheet file like 
@@ -83,7 +85,7 @@ Will then get an spreadsheet file like
 |1		|Lei		|Li		|!!ERROR!!	|
 |2		|Jim		|Green	|!!ERROR!!	|
 
-#### arse
+#### Parse
 
 ```java
 List<CellError> cellErrors = new ArrayList<CellError>();
