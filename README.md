@@ -27,7 +27,7 @@ headerMap.put("userId", "User Id"); // "userId" is a property of the javabeans y
 headerMap.put("firstName", "First Name");
 headerMap.put("lastName", "Last Name");
 
-Ssio.save(headerMap, users, spreadsheetOutputStream);		
+Ssio.save(headerMap, userList, spreadsheetOutputStream);		
 ```
 or if you use Guava, you can just
 ```java
@@ -163,7 +163,7 @@ public void setRoles(String rolesString){
 ### Misc
 
 #### Best Practice for Date-typed properties during parsing
-A date column may have both String-typed cells and Date-typed cells. You need to accommodate both. 
+A date column in a spreadsheet may have both String-typed cells and Date-typed cells (common human error). You need to accommodate both. 
 
 ```java
 
