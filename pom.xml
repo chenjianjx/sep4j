@@ -6,8 +6,8 @@
 	<packaging>jar</packaging>
 	<version>2.0.0</version>
 	<name>Simple Spreadsheet Processing for Java</name>
-	<description>An apache-poi wrapper which lets you read or write an spreadsheet file with a simple static method call</description>
-	<url>https://github.com/chenjianjx/srb4j</url>
+	<description>An apache-poi wrapper which lets you read or write an spreadsheet file with a simple java statement</description>
+	<url>https://github.com/chenjianjx/sep4j</url>
 
 	<licenses>
 		<license>
