@@ -11,8 +11,8 @@ It's a wrapper of Apache POI, with which you can do javabeans <-> spreadsheet co
 <dependencies>
 	<dependency>
 		<groupId>com.github.chenjianjx</groupId>
-		<artifactId>Sep4j</artifactId>
-		<version>1.2.0</version>
+		<artifactId>sep4j</artifactId>
+		<version>2.0.0</version>
 	</dependency>
 	..		
 </dependencies>	
@@ -23,7 +23,7 @@ It's a wrapper of Apache POI, with which you can do javabeans <-> spreadsheet co
 		
 Map<String, String> headerMap = new LinkedHashMap<String, String>();
 headerMap.put("userId", "User Id"); // "userId" is a property of the javabeans you are going to save.
-					// "User Id" will be the corresponding column header in the spreadsheet.
+			     // "User Id" will be the corresponding column header in the spreadsheet.
 headerMap.put("firstName", "First Name");
 headerMap.put("lastName", "Last Name");
 
@@ -31,8 +31,9 @@ Ssio.save(headerMap, userList, spreadsheetOutputStream);
 ```
 or if you use Guava, you can just
 ```java
-Ssio.save(ImmutableMap.of("userId", "User Id", "firstName","First Name", "lastName", "Last Name"), 
-	userList, spreadsheetOutputStream);
+Ssio.save(
+    ImmutableMap.of("userId", "User Id", "firstName","First Name", "lastName", "Last Name"), 
+    userList, spreadsheetOutputStream);
 ```
 
 You will get an spreadsheet file like 
@@ -49,7 +50,7 @@ Note: All cells generated will be String-Typed Cells.
 ```java
 Map<String, String> reverseHeaderMap = new HashMap<String,String>();
 reverseHeaderMap.put("User Id", "userId");  //"User Id" is a column header in the spreadsheet.
-						//"userId" is the corresponding property of User class.
+					//"userId" is the corresponding property of User class.
 reverseHeaderMap.put("First Name", "firstName");
 reverseHeaderMap.put("Last Name","lastName");
 
@@ -57,8 +58,9 @@ List<User> users = Ssio.parseIgnoringErrors(reverseHeaderMap, spreadsheetInputSt
 ```
 or if you use Guava, you can just
 ```java
-List<User> users = Ssio.parse(ImmutableMap.of("User Id","userId","First Name","firstName","Last Name","lastName"),
-							spreadsheetInputStream,  User.class);
+List<User> users = Ssio.parse(
+    ImmutableMap.of("User Id","userId","First Name","firstName","Last Name","lastName"),
+    spreadsheetInputStream,  User.class);
 ```
 
  
