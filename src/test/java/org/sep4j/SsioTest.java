@@ -24,46 +24,46 @@ import org.junit.rules.ExpectedException;
  * 
  */
 
-public class ExcelUtilsTest {
+public class SsioTest {
 
 	@Rule
 	public ExpectedException expectedEx = ExpectedException.none();
 
 	@Test
 	public void shouldSaveTest() {
-		Assert.assertTrue(ExcelUtils.shouldSave(null, true));
-		Assert.assertTrue(ExcelUtils.shouldSave(Arrays.asList(new DatumError()), true));
+		Assert.assertTrue(Ssio.shouldSave(null, true));
+		Assert.assertTrue(Ssio.shouldSave(Arrays.asList(new DatumError()), true));
 
-		Assert.assertTrue(ExcelUtils.shouldSave(null, false));
-		Assert.assertTrue(ExcelUtils.shouldSave(new ArrayList<DatumError>(), false));
-		Assert.assertFalse(ExcelUtils.shouldSave(Arrays.asList(new DatumError()), false));
+		Assert.assertTrue(Ssio.shouldSave(null, false));
+		Assert.assertTrue(Ssio.shouldSave(new ArrayList<DatumError>(), false));
+		Assert.assertFalse(Ssio.shouldSave(Arrays.asList(new DatumError()), false));
 	}
 
 	@Test
 	public void validateRecordClass_NullClass() {
 		expectedEx.expect(IllegalArgumentException.class);
 		expectedEx.expectMessage("null");
-		ExcelUtils.validateRecordClass(null);
+		Ssio.validateRecordClass(null);
 	}
 
 	@Test
 	public void createRecordIndexTest() {
-		ExcelUtils.createRecordInstance(DefaultConstructorBean.class);
-		ExcelUtils.createRecordInstance(PrivateClassBean.class);
+		Ssio.createRecordInstance(DefaultConstructorBean.class);
+		Ssio.createRecordInstance(PrivateClassBean.class);
 	}
 
 	@Test
 	public void createRecordIndexTest_NoDefaultConstructor() {
 		expectedEx.expect(RuntimeException.class);
 		expectedEx.expectMessage("<init>()");
-		ExcelUtils.createRecordInstance(NoDefaultConstructorBean.class);
+		Ssio.createRecordInstance(NoDefaultConstructorBean.class);
 	}
 
 	@Test
 	public void validateReverseHeaderMapTest_Null() {
 		expectedEx.expect(IllegalArgumentException.class);
 		expectedEx.expectMessage("null");
-		ExcelUtils.validateReverseHeaderMap(null);
+		Ssio.validateReverseHeaderMap(null);
 	}
 
 	@Test
@@ -71,14 +71,14 @@ public class ExcelUtilsTest {
 		expectedEx.expect(IllegalArgumentException.class);
 		expectedEx.expectMessage("empty");
 		Map<String, String> map = new HashMap<String, String>();
-		ExcelUtils.validateReverseHeaderMap(map);
+		Ssio.validateReverseHeaderMap(map);
 	}
 
 	@Test
 	public void validateReverseHeaderMapTest_Positive() {
 		Map<String, String> map = new HashMap<String, String>();
 		map.put("someText", "someProp");
-		ExcelUtils.validateReverseHeaderMap(map);
+		Ssio.validateReverseHeaderMap(map);
 	}
 
 	@Test
@@ -90,7 +90,7 @@ public class ExcelUtilsTest {
 
 		map.put("text1", "prop1");
 		map.put("	", "prop2");
-		ExcelUtils.validateReverseHeaderMap(map);
+		Ssio.validateReverseHeaderMap(map);
 	}
 
 	@Test
@@ -102,14 +102,14 @@ public class ExcelUtilsTest {
 
 		map.put("text1", "prop1");
 		map.put("text2", "	");
-		ExcelUtils.validateReverseHeaderMap(map);
+		Ssio.validateReverseHeaderMap(map);
 	}
 
 	@Test
 	public void validateHeaderMapTest_Null() {
 		expectedEx.expect(IllegalArgumentException.class);
 		expectedEx.expectMessage("null");
-		ExcelUtils.validateHeaderMap(null);
+		Ssio.validateHeaderMap(null);
 	}
 
 	@Test
@@ -117,14 +117,14 @@ public class ExcelUtilsTest {
 		expectedEx.expect(IllegalArgumentException.class);
 		expectedEx.expectMessage("empty");
 		LinkedHashMap<String, String> map = new LinkedHashMap<String, String>();
-		ExcelUtils.validateHeaderMap(map);
+		Ssio.validateHeaderMap(map);
 	}
 
 	@Test
 	public void validateHeaderMapTest_Positive() {
 		LinkedHashMap<String, String> map = new LinkedHashMap<String, String>();
 		map.put("someProp", "someText");
-		ExcelUtils.validateHeaderMap(map);
+		Ssio.validateHeaderMap(map);
 	}
 
 	@Test
@@ -136,17 +136,17 @@ public class ExcelUtilsTest {
 
 		map.put("prop1", "text1");
 		map.put("	", "text2");
-		ExcelUtils.validateHeaderMap(map);
+		Ssio.validateHeaderMap(map);
 	}
 
 	@Test
 	public void setPropertyWithCellTextTest_StrProp() {
 		UTRecord record = new UTRecord();
 
-		ExcelUtils.setPropertyWithCellValue(UTRecord.class, record, "strProp", "abc");
+		Ssio.setPropertyWithCellValue(UTRecord.class, record, "strProp", "abc");
 		Assert.assertEquals("abc", record.getStrProp());
 
-		ExcelUtils.setPropertyWithCellValue(UTRecord.class, record, "strProp", null);
+		Ssio.setPropertyWithCellValue(UTRecord.class, record, "strProp", null);
 		Assert.assertNull(record.getStrProp());
 	}
 
@@ -154,10 +154,10 @@ public class ExcelUtilsTest {
 	public void setPropertyWithCellTextTest_IntObjProp() {
 		UTRecord record = new UTRecord();
 
-		ExcelUtils.setPropertyWithCellValue(UTRecord.class, record, "intObjProp", "123");
+		Ssio.setPropertyWithCellValue(UTRecord.class, record, "intObjProp", "123");
 		Assert.assertEquals(new Integer(123), record.getIntObjProp());
 
-		ExcelUtils.setPropertyWithCellValue(UTRecord.class, record, "intObjProp", null);
+		Ssio.setPropertyWithCellValue(UTRecord.class, record, "intObjProp", null);
 		Assert.assertNull(record.getIntObjProp());
 
 	}
@@ -168,7 +168,7 @@ public class ExcelUtilsTest {
 		expectedEx.expectMessage("No suitable setter");
 
 		UTRecord record = new UTRecord();
-		ExcelUtils.setPropertyWithCellValue(UTRecord.class, record, "intObjProp", "abc");
+		Ssio.setPropertyWithCellValue(UTRecord.class, record, "intObjProp", "abc");
 
 	}
 
@@ -176,7 +176,7 @@ public class ExcelUtilsTest {
 	public void setPropertyWithCellTextTest_PrimIntProp() {
 		UTRecord record = new UTRecord();
 
-		ExcelUtils.setPropertyWithCellValue(UTRecord.class, record, "primIntProp", "123");
+		Ssio.setPropertyWithCellValue(UTRecord.class, record, "primIntProp", "123");
 		Assert.assertEquals(123, record.getPrimIntProp());
 	}
 
@@ -186,7 +186,7 @@ public class ExcelUtilsTest {
 		expectedEx.expectMessage("No suitable setter");
 
 		UTRecord record = new UTRecord();
-		ExcelUtils.setPropertyWithCellValue(UTRecord.class, record, "primIntProp", null);
+		Ssio.setPropertyWithCellValue(UTRecord.class, record, "primIntProp", null);
 	 
 
 	}
@@ -197,7 +197,7 @@ public class ExcelUtilsTest {
 		expectedEx.expectMessage("No suitable setter");
 
 		UTRecord record = new UTRecord();
-		ExcelUtils.setPropertyWithCellValue(UTRecord.class, record, "primIntProp", "abc");
+		Ssio.setPropertyWithCellValue(UTRecord.class, record, "primIntProp", "abc");
 	}
 
 	@Test
@@ -227,14 +227,14 @@ public class ExcelUtilsTest {
 		dateStyle.setDataFormat(row.getSheet().getWorkbook().createDataFormat().getFormat("yyyy-MM-dd HH:mm:ss.SSS"));
 		dateCell.setCellStyle(dateStyle);
 
-		Assert.assertNull(ExcelUtils.readCellAsStringOrDate(null));
-		Assert.assertNull(ExcelUtils.readCellAsStringOrDate(blankCell));
-		Assert.assertEquals("true", ExcelUtils.readCellAsStringOrDate(boolCell));
-		Assert.assertNull(ExcelUtils.readCellAsStringOrDate(errCell));
-		Assert.assertNull(ExcelUtils.readCellAsStringOrDate(formulaCell));
-		Assert.assertEquals("100.00", ExcelUtils.readCellAsStringOrDate(numericCell));
-		Assert.assertEquals("abc", ExcelUtils.readCellAsStringOrDate(strCell));
-		Assert.assertEquals(now, ExcelUtils.readCellAsStringOrDate(dateCell));
+		Assert.assertNull(Ssio.readCellAsStringOrDate(null));
+		Assert.assertNull(Ssio.readCellAsStringOrDate(blankCell));
+		Assert.assertEquals("true", Ssio.readCellAsStringOrDate(boolCell));
+		Assert.assertNull(Ssio.readCellAsStringOrDate(errCell));
+		Assert.assertNull(Ssio.readCellAsStringOrDate(formulaCell));
+		Assert.assertEquals("100.00", Ssio.readCellAsStringOrDate(numericCell));
+		Assert.assertEquals("abc", Ssio.readCellAsStringOrDate(strCell));
+		Assert.assertEquals(now, Ssio.readCellAsStringOrDate(dateCell));
 
 	}
 

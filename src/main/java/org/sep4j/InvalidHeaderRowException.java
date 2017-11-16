@@ -1,7 +1,7 @@
 package org.sep4j;
 
 /**
- * the header row of the excel is invalid
+ * the header row of the spreadsheet is invalid
  *  
  *
  */

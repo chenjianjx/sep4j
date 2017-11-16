@@ -67,10 +67,6 @@ public class SepBasicTypeConverts {
 
 	/**
 	 * can this type take null?
-	 * 
-	 * @param str
-	 * @param targetType
-	 * @return
 	 */
 	public static boolean canFromNull(Class<?> targetType) {
 		CanFromNullTypeMeta typeMeta = CanFromNullTypeMetas.get(targetType);
@@ -79,10 +75,6 @@ public class SepBasicTypeConverts {
 
 	/**
 	 * can this string be parsed as that type?
-	 * 
-	 * @param str
-	 * @param targetType
-	 * @return
 	 */
 	public static boolean canFromThisString(String str, Class<?> targetType) {
 		CanFromStringTypeMeta typeMeta = CanFromStringTypeMetas.get(targetType);
@@ -101,8 +93,8 @@ public class SepBasicTypeConverts {
 	 * parse from this string. You need to call
 	 * {@link #canFromThisString(String, Class)} first.
 	 * 
-	 * @param str
-	 * @param targetType
+	 * @param str  the string
+	 * @param targetType the target type you want to convert the string to
 	 * @return Note "null" doesn't mean anything wrong. if it returns null, then
 	 *         null is the value you are looking for.
 	 */

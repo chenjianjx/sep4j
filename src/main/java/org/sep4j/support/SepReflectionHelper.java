@@ -21,8 +21,6 @@ public class SepReflectionHelper {
 	 * get property value through getter methods. A runtime exception will be
 	 * thrown if no getter found
 	 * 
-	 * @param object
-	 * @param propName
 	 * @return
 	 * @throws RuntimeException
 	 */
@@ -45,11 +43,6 @@ public class SepReflectionHelper {
 
 	/**
 	 * find a setter by a properti's name and type
-	 * 
-	 * @param objClass
-	 * @param propName
-	 * @param propClass
-	 * @return
 	 */
 	public static Method findSetterByPropNameAndType(Class<?> objClass, String propName, Class<?> propClass) {
 		if (objClass == null) {
@@ -74,10 +67,6 @@ public class SepReflectionHelper {
 	/**
 	 * a property may have several setters, each of which take a new parameter
 	 * type
-	 * 
-	 * @param objClass
-	 * @param propName
-	 * @return
 	 */
 	public static List<Method> findSettersByPropName(Class<?> objClass, String propName) {
 		if (objClass == null) {
@@ -114,10 +103,6 @@ public class SepReflectionHelper {
 
 	/**
 	 * invoke a setter method
-	 * 
-	 * @param setter
-	 * @param object
-	 * @param propValue
 	 */
 	public static void invokeSetter(Method setter, Object object, Object propValue) {
 		if (setter == null) {
