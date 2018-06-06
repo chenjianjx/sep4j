@@ -12,7 +12,7 @@ It's a wrapper of Apache POI, with which you can do javabeans <-> spreadsheet co
 	<dependency>
 		<groupId>com.github.chenjianjx</groupId>
 		<artifactId>sep4j</artifactId>
-		<version>2.0.0</version>
+		<version>2.0.1</version>
 	</dependency>
 	..		
 </dependencies>	
