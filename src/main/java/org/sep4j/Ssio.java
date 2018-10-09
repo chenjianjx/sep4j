@@ -1,6 +1,7 @@
 package org.sep4j;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -208,7 +209,13 @@ public class Ssio {
 	public static <T> List<T> parseIgnoringErrors(
 			Map<String, String> reverseHeaderMap, File inputFile,
 			Class<T> recordClass) {
-		throw new UnsupportedOperationException();
+		try (InputStream input = new FileInputStream(inputFile)) {
+			return parseIgnoringErrors(reverseHeaderMap, input, recordClass);
+		} catch (FileNotFoundException e) {
+			throw new IllegalArgumentException(e);
+		} catch (IOException e) {
+			throw new IllegalStateException(e);
+		}
 	}
 	
 
@@ -272,6 +279,20 @@ public class Ssio {
 			records.add(record);
 		}
 		return records;
+	}
+	
+	/**
+	 * please check the doc of {@link #parse(Map, InputStream, List, Class)}
+	 */
+	public static <T> List<T> parse(Map<String, String> reverseHeaderMap, File inputFile, List<CellError> cellErrors,
+			Class<T> recordClass) throws InvalidFormatException, InvalidHeaderRowException {
+		try (InputStream input = new FileInputStream(inputFile)) {
+			return parse(reverseHeaderMap, input, cellErrors, recordClass);
+		} catch (FileNotFoundException e) {
+			throw new IllegalArgumentException(e);
+		} catch (IOException e) {
+			throw new IllegalStateException(e);
+		}
 	}
 
 	/**

@@ -3,6 +3,7 @@ package org.sep4j;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
@@ -355,6 +356,43 @@ public class SsioIntegrationTest {
 		Assert.assertTrue(error.getCause().getMessage().contains("suitable setter"));
 		Assert.assertTrue(error.getCause().getMessage().contains("abc"));
 	}
+	
+	@Test
+	public void parseTest_File() throws InvalidFormatException, InvalidHeaderRowException {
+		ByteArrayInputStream in = toByteArrayInputStreamAndClose(this.getClass().getResourceAsStream("/parse-test-data-half-correct.xlsx"));
+		File inputFile = createFile("parseTest_File");
+		copyInputToFileAndClose(in, inputFile); 		
+		List<CellError> cellErrors = new ArrayList<CellError>();
+		List<ITRecord> records = Ssio.parse(ITRecord.getReverseHeaderMap(), inputFile, cellErrors, ITRecord.class);
+
+		Assert.assertEquals(1, records.size());
+		Assert.assertEquals(1, cellErrors.size());
+	}	
+	
+	@Test
+	public void parseTest_IgnoringErrors() throws InvalidFormatException, InvalidHeaderRowException {
+		ByteArrayInputStream in = toByteArrayInputStreamAndClose(this.getClass().getResourceAsStream("/parse-test-data-half-correct.xlsx"));		 
+		List<ITRecord> records = Ssio.parseIgnoringErrors(ITRecord.getReverseHeaderMap(), in, ITRecord.class);
+
+		ITRecord record = records.get(0);
+		Assert.assertEquals(1, records.size());
+		Assert.assertEquals(123, record.getPrimInt());
+	}
+	
+	@Test
+	public void parseTest_IgnoringErrors_File() throws InvalidFormatException, InvalidHeaderRowException {
+		ByteArrayInputStream in = toByteArrayInputStreamAndClose(this.getClass().getResourceAsStream("/parse-test-data-half-correct.xlsx"));	
+		File inputFile = createFile("parseTest_IgnoringErrors_File_As_Input");
+		copyInputToFileAndClose(in, inputFile); 
+				
+		List<ITRecord> records = Ssio.parseIgnoringErrors(ITRecord.getReverseHeaderMap(), inputFile, ITRecord.class);
+
+		ITRecord record = records.get(0);
+		Assert.assertEquals(1, records.size());
+		Assert.assertEquals(123, record.getPrimInt());
+	}	
+
+
 
 	@Test
 	public void parseTest_AllStringCells() throws InvalidFormatException, InvalidHeaderRowException {
@@ -387,6 +425,7 @@ public class SsioIntegrationTest {
 		Assert.assertEquals("2014-11-29 16:18:47", record.getDateStr());
 
 	}
+	
 
 	@Test
 	public void parseTest_FreeTypeCells() throws InvalidFormatException, InvalidHeaderRowException {
@@ -422,7 +461,7 @@ public class SsioIntegrationTest {
 
 	}
 
-	// read outside input streams as bytes and then close them, so as to avoid
+	// read an outside input stream as bytes and then close it, so as to avoid
 	// try/finally snippet code in every parsing test
 	// method
 	private ByteArrayInputStream toByteArrayInputStreamAndClose(InputStream in) {
@@ -433,6 +472,23 @@ public class SsioIntegrationTest {
 			throw new IllegalStateException(e);
 		} finally {
 			IOUtils.closeQuietly(in);
+		}
+
+	}
+	
+	// copy an input stream to File and then close it, so as to avoid
+	// try/finally snippet code in every parsing test
+	// method
+	private void copyInputToFileAndClose(InputStream in, File file) {
+		FileOutputStream fileOutput = null;
+		try {
+			fileOutput = new FileOutputStream(file);
+			IOUtils.copy(in, fileOutput);
+		} catch (IOException e) {
+			throw new IllegalStateException(e);
+		} finally {
+			IOUtils.closeQuietly(in);
+			IOUtils.closeQuietly(fileOutput);
 		}
 
 	}
