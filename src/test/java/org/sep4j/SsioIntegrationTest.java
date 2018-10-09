@@ -3,6 +3,7 @@ package org.sep4j;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
@@ -126,8 +127,57 @@ public class SsioIntegrationTest {
 
 	}
 
+	
 	@Test
-	public void saveTest_IngoringErrors() throws InvalidFormatException, IOException {
+	public void saveTest_File() throws InvalidFormatException, IOException {
+		LinkedHashMap<String, String> headerMap = new LinkedHashMap<String, String>();
+		headerMap.put("primInt", "Primitive Int");
+		headerMap.put("fake", "Not Real");
+
+		ITRecord record = new ITRecord();
+		record.setPrimInt(123);
+
+		Collection<ITRecord> records = Arrays.asList(record);
+		File outputFile = createFile("saveTest_File");
+		String datumErrPlaceholder = "!!ERROR!!";
+		List<DatumError> datumErrors = new ArrayList<DatumError>();
+
+		// save it
+		Ssio.save(headerMap, records, outputFile, datumErrPlaceholder, datumErrors);
+		System.out.println("You can take a look at " + outputFile);
+		byte[] spreadsheet = FileUtils.readFileToByteArray(outputFile);
+
+
+		// then parse it
+		Workbook workbook = WorkbookFactory.create(new ByteArrayInputStream(spreadsheet));
+
+		/*** do assertions ***/
+		Sheet sheet = workbook.getSheetAt(0);
+		Row headerRow = sheet.getRow(0);
+		Row dataRow = sheet.getRow(1);
+
+		Cell cell00 = headerRow.getCell(0);
+		Cell cell01 = headerRow.getCell(1);
+		Cell cell10 = dataRow.getCell(0);
+		Cell cell11 = dataRow.getCell(1);
+
+		// texts
+		Assert.assertEquals("Primitive Int", cell00.getStringCellValue());
+		Assert.assertEquals("Not Real", cell01.getStringCellValue());
+		Assert.assertEquals("123", cell10.getStringCellValue());
+		Assert.assertEquals("!!ERROR!!", cell11.getStringCellValue());
+
+		// errors
+		DatumError datumError = datumErrors.get(0);
+		Assert.assertEquals(1, datumErrors.size());
+		Assert.assertEquals(0, datumError.getRecordIndex());
+		Assert.assertEquals("fake", datumError.getPropName());
+		Assert.assertTrue(datumError.getCause().getMessage().contains("no getter method"));
+
+	}	
+	
+	@Test
+	public void saveTest_IgnoringErrors() throws InvalidFormatException, IOException {
 		LinkedHashMap<String, String> headerMap = new LinkedHashMap<String, String>();
 		headerMap.put("fake", "Not Real");
 
@@ -168,6 +218,47 @@ public class SsioIntegrationTest {
 		Assert.assertEquals("", cell10.getStringCellValue());
 
 	}
+	
+	@Test
+	public void saveTest_IgnoringErrors_File() throws InvalidFormatException, IOException {
+		LinkedHashMap<String, String> headerMap = new LinkedHashMap<String, String>();
+		headerMap.put("primInt", "Primitive Int");
+		headerMap.put("fake", "Not Real");
+
+		ITRecord record = new ITRecord();
+		record.setPrimInt(123);
+
+		Collection<ITRecord> records = Arrays.asList(record);
+		File outputFile = createFile("saveTest_IgnoringErrors_File");
+
+		// save it
+		Ssio.save(headerMap, records, outputFile);
+		System.out.println("You can take a look at " + outputFile);
+		byte[] spreadsheet = FileUtils.readFileToByteArray(outputFile);
+
+		 
+		// then parse it
+		Workbook workbook = WorkbookFactory.create(new ByteArrayInputStream(spreadsheet));
+
+		/*** do assertions ***/
+		Sheet sheet = workbook.getSheetAt(0);
+		Row headerRow = sheet.getRow(0);
+		Row dataRow = sheet.getRow(1);
+
+		Cell cell00 = headerRow.getCell(0);
+		Cell cell01 = headerRow.getCell(1);
+		Cell cell10 = dataRow.getCell(0);
+		Cell cell11 = dataRow.getCell(1);
+
+
+		// texts
+		Assert.assertEquals("Primitive Int", cell00.getStringCellValue());
+		Assert.assertEquals("Not Real", cell01.getStringCellValue());
+		Assert.assertEquals("123", cell10.getStringCellValue());
+		Assert.assertEquals("", cell11.getStringCellValue());
+		
+	}
+	
 
 	@Test
 	public void saveTest_HeadersOnly() throws InvalidFormatException, IOException {
@@ -265,6 +356,43 @@ public class SsioIntegrationTest {
 		Assert.assertTrue(error.getCause().getMessage().contains("suitable setter"));
 		Assert.assertTrue(error.getCause().getMessage().contains("abc"));
 	}
+	
+	@Test
+	public void parseTest_File() throws InvalidFormatException, InvalidHeaderRowException {
+		ByteArrayInputStream in = toByteArrayInputStreamAndClose(this.getClass().getResourceAsStream("/parse-test-data-half-correct.xlsx"));
+		File inputFile = createFile("parseTest_File");
+		copyInputToFileAndClose(in, inputFile); 		
+		List<CellError> cellErrors = new ArrayList<CellError>();
+		List<ITRecord> records = Ssio.parse(ITRecord.getReverseHeaderMap(), inputFile, cellErrors, ITRecord.class);
+
+		Assert.assertEquals(1, records.size());
+		Assert.assertEquals(1, cellErrors.size());
+	}	
+	
+	@Test
+	public void parseTest_IgnoringErrors() throws InvalidFormatException, InvalidHeaderRowException {
+		ByteArrayInputStream in = toByteArrayInputStreamAndClose(this.getClass().getResourceAsStream("/parse-test-data-half-correct.xlsx"));		 
+		List<ITRecord> records = Ssio.parseIgnoringErrors(ITRecord.getReverseHeaderMap(), in, ITRecord.class);
+
+		ITRecord record = records.get(0);
+		Assert.assertEquals(1, records.size());
+		Assert.assertEquals(123, record.getPrimInt());
+	}
+	
+	@Test
+	public void parseTest_IgnoringErrors_File() throws InvalidFormatException, InvalidHeaderRowException {
+		ByteArrayInputStream in = toByteArrayInputStreamAndClose(this.getClass().getResourceAsStream("/parse-test-data-half-correct.xlsx"));	
+		File inputFile = createFile("parseTest_IgnoringErrors_File_As_Input");
+		copyInputToFileAndClose(in, inputFile); 
+				
+		List<ITRecord> records = Ssio.parseIgnoringErrors(ITRecord.getReverseHeaderMap(), inputFile, ITRecord.class);
+
+		ITRecord record = records.get(0);
+		Assert.assertEquals(1, records.size());
+		Assert.assertEquals(123, record.getPrimInt());
+	}	
+
+
 
 	@Test
 	public void parseTest_AllStringCells() throws InvalidFormatException, InvalidHeaderRowException {
@@ -297,6 +425,7 @@ public class SsioIntegrationTest {
 		Assert.assertEquals("2014-11-29 16:18:47", record.getDateStr());
 
 	}
+	
 
 	@Test
 	public void parseTest_FreeTypeCells() throws InvalidFormatException, InvalidHeaderRowException {
@@ -332,7 +461,7 @@ public class SsioIntegrationTest {
 
 	}
 
-	// read outside input streams as bytes and then close them, so as to avoid
+	// read an outside input stream as bytes and then close it, so as to avoid
 	// try/finally snippet code in every parsing test
 	// method
 	private ByteArrayInputStream toByteArrayInputStreamAndClose(InputStream in) {
@@ -346,11 +475,28 @@ public class SsioIntegrationTest {
 		}
 
 	}
+	
+	// copy an input stream to File and then close it, so as to avoid
+	// try/finally snippet code in every parsing test
+	// method
+	private void copyInputToFileAndClose(InputStream in, File file) {
+		FileOutputStream fileOutput = null;
+		try {
+			fileOutput = new FileOutputStream(file);
+			IOUtils.copy(in, fileOutput);
+		} catch (IOException e) {
+			throw new IllegalStateException(e);
+		} finally {
+			IOUtils.closeQuietly(in);
+			IOUtils.closeQuietly(fileOutput);
+		}
+
+	}
 
 	private File createFile(String prefix) {
-		File dir = new File(System.getProperty("user.home"), "/temp/sep");
+		File dir = new File(System.getProperty("java.io.tmpdir"), "/sep4j-it-test");
 		dir.mkdirs();
-		String filename = prefix + System.currentTimeMillis() + ".xlsx";
+		String filename = prefix + "-" + System.nanoTime() + ".xlsx";
 		File file = new File(dir, filename);
 		return file;
 	}

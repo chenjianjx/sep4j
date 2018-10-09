@@ -1,5 +1,9 @@
 package org.sep4j;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -58,6 +62,22 @@ public class Ssio {
 			Collection<T> records, OutputStream outputStream) {
 		save(headerMap, records, outputStream, null, null, true);
 	}
+	
+	/**
+	 * please check the doc of {@link #save(Map, Collection, OutputStream)}
+	 * @param headerMap
+	 * @param records
+	 * @param outputFile
+	 */
+	public static <T> void save(Map<String, String> headerMap, Collection<T> records, File outputFile) {
+		try (OutputStream outputStream = new FileOutputStream(outputFile)) {
+			save(headerMap, records, outputStream);
+		} catch (FileNotFoundException e) {
+			throw new IllegalArgumentException(e);
+		} catch (IOException e) {
+			throw new IllegalStateException(e);
+		}
+	}
 
 	/**
 	 * save records to a new workbook even if there are datum errors in the
@@ -82,6 +102,7 @@ public class Ssio {
 			String datumErrPlaceholder) {
 		save(headerMap, records, outputStream, datumErrPlaceholder, null, true);
 	}
+	
 
 	/**
 	 * save records to a new workbook even if there are datum errors in the
@@ -109,6 +130,25 @@ public class Ssio {
 			String datumErrPlaceholder, List<DatumError> datumErrors) {
 		save(headerMap, records, outputStream, datumErrPlaceholder,
 				datumErrors, true);
+	}
+	
+	/**
+	 * please check the doc of {@link #save(Map, Collection, OutputStream, String, List)}
+	 * @param headerMap
+	 * @param records
+	 * @param outputFile
+	 * @param datumErrPlaceholder
+	 * @param datumErrors
+	 */
+	public static <T> void save(Map<String, String> headerMap, Collection<T> records, File outputFile,
+			String datumErrPlaceholder, List<DatumError> datumErrors) {
+		try (OutputStream outputStream = new FileOutputStream(outputFile)) {
+			save(headerMap, records, outputStream, datumErrPlaceholder, datumErrors, true);
+		} catch (FileNotFoundException e) {
+			throw new IllegalArgumentException(e);
+		} catch (IOException e) {
+			throw new IllegalStateException(e);
+		}
 	}
 
 	/**
@@ -169,6 +209,26 @@ public class Ssio {
 		}
 
 	}
+	
+	/**
+	 * please check the doc of {@link #parseIgnoringErrors(Map, InputStream, List, Class)}.
+	 * @param reverseHeaderMap
+	 * @param inputFile
+	 * @param recordClass
+	 * @return
+	 */
+	public static <T> List<T> parseIgnoringErrors(
+			Map<String, String> reverseHeaderMap, File inputFile,
+			Class<T> recordClass) {
+		try (InputStream input = new FileInputStream(inputFile)) {
+			return parseIgnoringErrors(reverseHeaderMap, input, recordClass);
+		} catch (FileNotFoundException e) {
+			throw new IllegalArgumentException(e);
+		} catch (IOException e) {
+			throw new IllegalStateException(e);
+		}
+	}
+	
 
 	/**
 	 * <p>parse an spreadsheet to a list of beans. </p> 
@@ -230,6 +290,27 @@ public class Ssio {
 			records.add(record);
 		}
 		return records;
+	}
+	
+	/**
+	 * please check the doc of {@link #parse(Map, InputStream, List, Class)}
+	 * @param reverseHeaderMap
+	 * @param inputFile
+	 * @param cellErrors
+	 * @param recordClass
+	 * @return
+	 * @throws InvalidFormatException
+	 * @throws InvalidHeaderRowException
+	 */
+	public static <T> List<T> parse(Map<String, String> reverseHeaderMap, File inputFile, List<CellError> cellErrors,
+			Class<T> recordClass) throws InvalidFormatException, InvalidHeaderRowException {
+		try (InputStream input = new FileInputStream(inputFile)) {
+			return parse(reverseHeaderMap, input, cellErrors, recordClass);
+		} catch (FileNotFoundException e) {
+			throw new IllegalArgumentException(e);
+		} catch (IOException e) {
+			throw new IllegalStateException(e);
+		}
 	}
 
 	/**
