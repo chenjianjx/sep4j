@@ -126,8 +126,57 @@ public class SsioIntegrationTest {
 
 	}
 
+	
 	@Test
-	public void saveTest_IngoringErrors() throws InvalidFormatException, IOException {
+	public void saveTest_File() throws InvalidFormatException, IOException {
+		LinkedHashMap<String, String> headerMap = new LinkedHashMap<String, String>();
+		headerMap.put("primInt", "Primitive Int");
+		headerMap.put("fake", "Not Real");
+
+		ITRecord record = new ITRecord();
+		record.setPrimInt(123);
+
+		Collection<ITRecord> records = Arrays.asList(record);
+		File outputFile = createFile("saveTest_File");
+		String datumErrPlaceholder = "!!ERROR!!";
+		List<DatumError> datumErrors = new ArrayList<DatumError>();
+
+		// save it
+		Ssio.save(headerMap, records, outputFile, datumErrPlaceholder, datumErrors);
+		System.out.println("You can take a look at " + outputFile);
+		byte[] spreadsheet = FileUtils.readFileToByteArray(outputFile);
+
+
+		// then parse it
+		Workbook workbook = WorkbookFactory.create(new ByteArrayInputStream(spreadsheet));
+
+		/*** do assertions ***/
+		Sheet sheet = workbook.getSheetAt(0);
+		Row headerRow = sheet.getRow(0);
+		Row dataRow = sheet.getRow(1);
+
+		Cell cell00 = headerRow.getCell(0);
+		Cell cell01 = headerRow.getCell(1);
+		Cell cell10 = dataRow.getCell(0);
+		Cell cell11 = dataRow.getCell(1);
+
+		// texts
+		Assert.assertEquals("Primitive Int", cell00.getStringCellValue());
+		Assert.assertEquals("Not Real", cell01.getStringCellValue());
+		Assert.assertEquals("123", cell10.getStringCellValue());
+		Assert.assertEquals("!!ERROR!!", cell11.getStringCellValue());
+
+		// errors
+		DatumError datumError = datumErrors.get(0);
+		Assert.assertEquals(1, datumErrors.size());
+		Assert.assertEquals(0, datumError.getRecordIndex());
+		Assert.assertEquals("fake", datumError.getPropName());
+		Assert.assertTrue(datumError.getCause().getMessage().contains("no getter method"));
+
+	}	
+	
+	@Test
+	public void saveTest_IgnoringErrors() throws InvalidFormatException, IOException {
 		LinkedHashMap<String, String> headerMap = new LinkedHashMap<String, String>();
 		headerMap.put("fake", "Not Real");
 
@@ -168,6 +217,47 @@ public class SsioIntegrationTest {
 		Assert.assertEquals("", cell10.getStringCellValue());
 
 	}
+	
+	@Test
+	public void saveTest_IgnoringErrors_File() throws InvalidFormatException, IOException {
+		LinkedHashMap<String, String> headerMap = new LinkedHashMap<String, String>();
+		headerMap.put("primInt", "Primitive Int");
+		headerMap.put("fake", "Not Real");
+
+		ITRecord record = new ITRecord();
+		record.setPrimInt(123);
+
+		Collection<ITRecord> records = Arrays.asList(record);
+		File outputFile = createFile("saveTest_IgnoringErrors_File");
+
+		// save it
+		Ssio.save(headerMap, records, outputFile);
+		System.out.println("You can take a look at " + outputFile);
+		byte[] spreadsheet = FileUtils.readFileToByteArray(outputFile);
+
+		 
+		// then parse it
+		Workbook workbook = WorkbookFactory.create(new ByteArrayInputStream(spreadsheet));
+
+		/*** do assertions ***/
+		Sheet sheet = workbook.getSheetAt(0);
+		Row headerRow = sheet.getRow(0);
+		Row dataRow = sheet.getRow(1);
+
+		Cell cell00 = headerRow.getCell(0);
+		Cell cell01 = headerRow.getCell(1);
+		Cell cell10 = dataRow.getCell(0);
+		Cell cell11 = dataRow.getCell(1);
+
+
+		// texts
+		Assert.assertEquals("Primitive Int", cell00.getStringCellValue());
+		Assert.assertEquals("Not Real", cell01.getStringCellValue());
+		Assert.assertEquals("123", cell10.getStringCellValue());
+		Assert.assertEquals("", cell11.getStringCellValue());
+		
+	}
+	
 
 	@Test
 	public void saveTest_HeadersOnly() throws InvalidFormatException, IOException {
@@ -348,9 +438,9 @@ public class SsioIntegrationTest {
 	}
 
 	private File createFile(String prefix) {
-		File dir = new File(System.getProperty("user.home"), "/temp/sep");
+		File dir = new File(System.getProperty("java.io.tmpdir"), "/sep4j-it-test");
 		dir.mkdirs();
-		String filename = prefix + System.currentTimeMillis() + ".xlsx";
+		String filename = prefix + "-" + System.nanoTime() + ".xlsx";
 		File file = new File(dir, filename);
 		return file;
 	}

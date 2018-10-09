@@ -4,7 +4,7 @@
 	<groupId>com.github.chenjianjx</groupId>
 	<artifactId>sep4j</artifactId>
 	<packaging>jar</packaging>
-	<version>2.0.1</version>
+	<version>2.0.2-SNAPSHOT</version>
 	<name>Simple Spreadsheet Processing for Java</name>
 	<description>An apache-poi wrapper which lets you read or write an spreadsheet file with a simple java statement</description>
 	<url>https://github.com/chenjianjx/sep4j</url>

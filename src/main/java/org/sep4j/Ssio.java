@@ -1,5 +1,8 @@
 package org.sep4j;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -58,6 +61,20 @@ public class Ssio {
 			Collection<T> records, OutputStream outputStream) {
 		save(headerMap, records, outputStream, null, null, true);
 	}
+	
+	/**
+	 * please check the doc of {@link #save(Map, Collection, OutputStream)}
+	 * 
+	 */
+	public static <T> void save(Map<String, String> headerMap, Collection<T> records, File outputFile) {
+		try (OutputStream outputStream = new FileOutputStream(outputFile)) {
+			save(headerMap, records, outputStream);
+		} catch (FileNotFoundException e) {
+			throw new IllegalArgumentException(e);
+		} catch (IOException e) {
+			throw new IllegalStateException(e);
+		}
+	}
 
 	/**
 	 * save records to a new workbook even if there are datum errors in the
@@ -82,6 +99,7 @@ public class Ssio {
 			String datumErrPlaceholder) {
 		save(headerMap, records, outputStream, datumErrPlaceholder, null, true);
 	}
+	
 
 	/**
 	 * save records to a new workbook even if there are datum errors in the
@@ -109,6 +127,20 @@ public class Ssio {
 			String datumErrPlaceholder, List<DatumError> datumErrors) {
 		save(headerMap, records, outputStream, datumErrPlaceholder,
 				datumErrors, true);
+	}
+	
+	/**
+	 * please check the doc of {@link #save(Map, Collection, OutputStream, String, List)}
+	 */
+	public static <T> void save(Map<String, String> headerMap, Collection<T> records, File outputFile,
+			String datumErrPlaceholder, List<DatumError> datumErrors) {
+		try (OutputStream outputStream = new FileOutputStream(outputFile)) {
+			save(headerMap, records, outputStream, datumErrPlaceholder, datumErrors, true);
+		} catch (FileNotFoundException e) {
+			throw new IllegalArgumentException(e);
+		} catch (IOException e) {
+			throw new IllegalStateException(e);
+		}
 	}
 
 	/**
@@ -169,6 +201,16 @@ public class Ssio {
 		}
 
 	}
+	
+	/**
+	 * please check the doc of {@link #parseIgnoringErrors(Map, InputStream, List, Class)}.
+	 */
+	public static <T> List<T> parseIgnoringErrors(
+			Map<String, String> reverseHeaderMap, File inputFile,
+			Class<T> recordClass) {
+		throw new UnsupportedOperationException();
+	}
+	
 
 	/**
 	 * <p>parse an spreadsheet to a list of beans. </p> 
