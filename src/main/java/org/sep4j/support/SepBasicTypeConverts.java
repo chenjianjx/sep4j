@@ -15,8 +15,8 @@ import java.util.regex.Pattern;
  */
 public class SepBasicTypeConverts {
 
-	private static final Map<Class<?>, CanFromStringTypeMeta> CanFromStringTypeMetas = new LinkedHashMap<Class<?>, CanFromStringTypeMeta>();
-	private static final Map<Class<?>, CanFromNullTypeMeta> CanFromNullTypeMetas = new LinkedHashMap<Class<?>, CanFromNullTypeMeta>();
+	private static final Map<Class<?>, CanFromStringTypeMeta> canFromStringTypeMetas = new LinkedHashMap<Class<?>, CanFromStringTypeMeta>();
+	private static final Map<Class<?>, CanFromNullTypeMeta> canFromNullTypeMetas = new LinkedHashMap<Class<?>, CanFromNullTypeMeta>();
 
 	static {
 		init();
@@ -58,18 +58,18 @@ public class SepBasicTypeConverts {
 	}
 
 	private static void addCanFromStringTypeMeta(CanFromStringTypeMeta meta) {
-		CanFromStringTypeMetas.put(meta.getType(), meta);
+		canFromStringTypeMetas.put(meta.getType(), meta);
 	}
 
 	private static void addCanFromNullTypeMeta(CanFromNullTypeMeta meta) {
-		CanFromNullTypeMetas.put(meta.getType(), meta);
+		canFromNullTypeMetas.put(meta.getType(), meta);
 	}
 
 	/**
 	 * can this type take null?
 	 */
 	public static boolean canFromNull(Class<?> targetType) {
-		CanFromNullTypeMeta typeMeta = CanFromNullTypeMetas.get(targetType);
+		CanFromNullTypeMeta typeMeta = canFromNullTypeMetas.get(targetType);
 		return typeMeta != null;
 	}
 
@@ -77,7 +77,7 @@ public class SepBasicTypeConverts {
 	 * can this string be parsed as that type?
 	 */
 	public static boolean canFromThisString(String str, Class<?> targetType) {
-		CanFromStringTypeMeta typeMeta = CanFromStringTypeMetas.get(targetType);
+		CanFromStringTypeMeta typeMeta = canFromStringTypeMetas.get(targetType);
 		if (typeMeta == null) {
 			return false;
 		}
@@ -88,6 +88,16 @@ public class SepBasicTypeConverts {
 			return false;
 		}
 	}
+	
+	/**
+	 * can you parse some string to this type? 
+	 * @param targetType
+	 * @return
+	 */
+	public static boolean canTypeFromString(Class<?> targetType) {
+		return canFromStringTypeMetas.containsKey(targetType);
+	}
+	
 
 	/**
 	 * parse from this string. You need to call
@@ -102,7 +112,7 @@ public class SepBasicTypeConverts {
 		if (!canFromThisString(str, targetType)) {
 			throw new IllegalArgumentException("Please call fromThisString(String str, targetType) first to confirm");
 		}
-		CanFromStringTypeMeta typeMeta = CanFromStringTypeMetas.get(targetType);
+		CanFromStringTypeMeta typeMeta = canFromStringTypeMetas.get(targetType);
 		return typeMeta.fromThisString(str);
 	}
 

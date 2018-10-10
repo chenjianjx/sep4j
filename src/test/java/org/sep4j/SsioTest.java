@@ -141,23 +141,23 @@ public class SsioTest {
 
 	@Test
 	public void setPropertyWithCellTextTest_StrProp() {
-		UTRecord record = new UTRecord();
+		SsioUnitTestRecord record = new SsioUnitTestRecord();
 
-		Ssio.setPropertyWithCellValue(UTRecord.class, record, "strProp", "abc");
+		Ssio.setPropertyWithCellValue(SsioUnitTestRecord.class, record, "strProp", "abc");
 		Assert.assertEquals("abc", record.getStrProp());
 
-		Ssio.setPropertyWithCellValue(UTRecord.class, record, "strProp", null);
+		Ssio.setPropertyWithCellValue(SsioUnitTestRecord.class, record, "strProp", null);
 		Assert.assertNull(record.getStrProp());
 	}
 
 	@Test
 	public void setPropertyWithCellTextTest_IntObjProp() {
-		UTRecord record = new UTRecord();
+		SsioUnitTestRecord record = new SsioUnitTestRecord();
 
-		Ssio.setPropertyWithCellValue(UTRecord.class, record, "intObjProp", "123");
+		Ssio.setPropertyWithCellValue(SsioUnitTestRecord.class, record, "intObjProp", "123");
 		Assert.assertEquals(new Integer(123), record.getIntObjProp());
 
-		Ssio.setPropertyWithCellValue(UTRecord.class, record, "intObjProp", null);
+		Ssio.setPropertyWithCellValue(SsioUnitTestRecord.class, record, "intObjProp", null);
 		Assert.assertNull(record.getIntObjProp());
 
 	}
@@ -167,16 +167,16 @@ public class SsioTest {
 		expectedEx.expect(IllegalArgumentException.class);
 		expectedEx.expectMessage("No suitable setter");
 
-		UTRecord record = new UTRecord();
-		Ssio.setPropertyWithCellValue(UTRecord.class, record, "intObjProp", "abc");
+		SsioUnitTestRecord record = new SsioUnitTestRecord();
+		Ssio.setPropertyWithCellValue(SsioUnitTestRecord.class, record, "intObjProp", "abc");
 
 	}
 
 	@Test
 	public void setPropertyWithCellTextTest_PrimIntProp() {
-		UTRecord record = new UTRecord();
+		SsioUnitTestRecord record = new SsioUnitTestRecord();
 
-		Ssio.setPropertyWithCellValue(UTRecord.class, record, "primIntProp", "123");
+		Ssio.setPropertyWithCellValue(SsioUnitTestRecord.class, record, "primIntProp", "123");
 		Assert.assertEquals(123, record.getPrimIntProp());
 	}
 
@@ -185,8 +185,8 @@ public class SsioTest {
 		expectedEx.expect(IllegalArgumentException.class);
 		expectedEx.expectMessage("No suitable setter");
 
-		UTRecord record = new UTRecord();
-		Ssio.setPropertyWithCellValue(UTRecord.class, record, "primIntProp", null);
+		SsioUnitTestRecord record = new SsioUnitTestRecord();
+		Ssio.setPropertyWithCellValue(SsioUnitTestRecord.class, record, "primIntProp", null);
 	 
 
 	}
@@ -196,8 +196,8 @@ public class SsioTest {
 		expectedEx.expect(IllegalArgumentException.class);
 		expectedEx.expectMessage("No suitable setter");
 
-		UTRecord record = new UTRecord();
-		Ssio.setPropertyWithCellValue(UTRecord.class, record, "primIntProp", "abc");
+		SsioUnitTestRecord record = new SsioUnitTestRecord();
+		Ssio.setPropertyWithCellValue(SsioUnitTestRecord.class, record, "primIntProp", "abc");
 	}
 
 	@Test
@@ -239,7 +239,7 @@ public class SsioTest {
 	}
 
 	@SuppressWarnings("unused")
-	private static class UTRecord {
+	private static class SsioUnitTestRecord {
 		private int primIntProp;
 		private Integer intObjProp;
 		private String strProp;
