@@ -22,7 +22,7 @@ public class HeaderUtils {
 	 * property "firstName" will lead to a map entry of "firstName" => "First Name"
 	 * 
 	 * @param beanClass
-	 * @return
+	 * @return A modifiable map.  Feel free to add or remove elements.
 	 */
 	public static Map<String, String> generateHeaderMapFromProps(Class<?> beanClass) {
 		LinkedHashMap<String, String> resultMap = new LinkedHashMap<String, String>();
@@ -50,7 +50,7 @@ public class HeaderUtils {
 	 * property "firstName" will lead to a map entry of "First Name" => "firstName"
 	 * 
 	 * @param beanClass
-	 * @return
+	 * @return A modifiable map.  Feel free to add or remove elements.
 	 */
 	public static Map<String, String> generateReverseHeaderMapFromProps(Class<?> beanClass) {
 		LinkedHashMap<String, String> resultMap = new LinkedHashMap<String, String>();

@@ -27,7 +27,8 @@ headerMap.put("userId", "User Id"); // "userId" is a property of the javabeans y
 headerMap.put("firstName", "First Name");
 headerMap.put("lastName", "Last Name");
 
-Ssio.save(headerMap, userList, spreadsheetOutputStream);		
+Ssio.save(headerMap, userList, spreadsheetOutputStream);	
+//"spreadsheetOutputStream" can be replaced with "spreadsheetOutputFile" (a java.io.File object) 	
 ```
 or if you use Guava, you can just
 ```java
@@ -35,6 +36,11 @@ Ssio.save(
     ImmutableMap.of("userId", "User Id", "firstName","First Name", "lastName", "Last Name"), 
     userList, spreadsheetOutputStream);
 ```
+
+You can even just the program generate a header map for you: 
+````java
+Ssio.save(User.class, userList, spreadsheetOutputStream);
+````
 
 You will get an spreadsheet file like 
 
@@ -54,7 +60,8 @@ reverseHeaderMap.put("User Id", "userId");  //"User Id" is a column header in th
 reverseHeaderMap.put("First Name", "firstName");
 reverseHeaderMap.put("Last Name","lastName");
 
-List<User> users = Ssio.parseIgnoringErrors(reverseHeaderMap, spreadsheetInputStream, User.class);
+List<User> users = Ssio.parseIgnoringErrors(reverseHeaderMap, spreadsheetInputStream, User.class); 
+//"spreadsheetInputStream" can be replaced with "spreadsheetInputFile" (a java.io.File object) 	
 ```
 or if you use Guava, you can just
 ```java
@@ -62,7 +69,10 @@ List<User> users = Ssio.parse(
     ImmutableMap.of("User Id","userId","First Name","firstName","Last Name","lastName"),
     spreadsheetInputStream,  User.class);
 ```
-
+You can even let the program guess out a reverseHeaderMap for you
+````java
+List<User> users = Ssio.parseIgnoringErrors(spreadsheetInputStream, User.class);
+````
  
 ---
 ### Error Handling

@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.text.ParseException;
@@ -14,18 +15,20 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
-import junit.framework.Assert;
+import java.util.stream.Collectors;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateFormatUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -33,6 +36,8 @@ import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+
+import junit.framework.Assert;
 
 /**
  * the integration test
@@ -143,8 +148,7 @@ public class SsioIntegrationTest {
 		List<DatumError> datumErrors = new ArrayList<DatumError>();
 
 		// save it
-		Ssio.save(headerMap, records, outputFile, datumErrPlaceholder, datumErrors);
-		System.out.println("You can take a look at " + outputFile);
+		Ssio.save(headerMap, records, outputFile, datumErrPlaceholder, datumErrors);		
 		byte[] spreadsheet = FileUtils.readFileToByteArray(outputFile);
 
 
@@ -232,12 +236,12 @@ public class SsioIntegrationTest {
 		File outputFile = createFile("saveTest_IgnoringErrors_File");
 
 		// save it
-		Ssio.save(headerMap, records, outputFile);
-		System.out.println("You can take a look at " + outputFile);
-		byte[] spreadsheet = FileUtils.readFileToByteArray(outputFile);
+		Ssio.save(headerMap, records, outputFile);	
+		
 
 		 
 		// then parse it
+		byte[] spreadsheet = FileUtils.readFileToByteArray(outputFile);
 		Workbook workbook = WorkbookFactory.create(new ByteArrayInputStream(spreadsheet));
 
 		/*** do assertions ***/
@@ -257,6 +261,99 @@ public class SsioIntegrationTest {
 		Assert.assertEquals("123", cell10.getStringCellValue());
 		Assert.assertEquals("", cell11.getStringCellValue());
 		
+	}
+	
+	
+	
+	@Test
+	public void saveTest_UsingGeneratedHeader_File() throws InvalidFormatException, IOException, ParseException {
+		HeaderUtilsTestRecord record = new HeaderUtilsTestRecord();
+		record.setPrimIntProp(1);
+		record.setIntObjProp(100);
+		record.setStrProp("some string");
+		record.setDateProp("2000-01-01 00:00:00");		 
+		record.setWriteOnlyProp("would not be saved");
+
+		
+
+		Collection<HeaderUtilsTestRecord> records = Arrays.asList(record);
+		File outputFile = createFile("saveTest_UsingGeneratedHeader_File");
+		// save it
+		Ssio.save(HeaderUtilsTestRecord.class, records, outputFile);
+		
+
+		// then parse it
+		byte[] spreadsheet = FileUtils.readFileToByteArray(outputFile);
+		Workbook workbook = WorkbookFactory.create(new ByteArrayInputStream(spreadsheet));
+
+		/*** do assertions ***/
+		Sheet sheet = workbook.getSheetAt(0);
+		Row headerRow = sheet.getRow(0);
+		Row dataRow = sheet.getRow(1);
+		
+		List<String> headerCells = getAllCells(headerRow).stream().map(c -> c.getStringCellValue()).collect(Collectors.toList());
+		List<Object> dataCells = getAllCells(dataRow).stream().map(c -> getStringOrDateValue(c)).collect(Collectors.toList());
+		Map<String, Object> keyValueMap = new LinkedHashMap<>();
+		for (int i = 0; i < headerCells.size(); i++) {
+			keyValueMap.put(headerCells.get(i), dataCells.get(i));
+		}
+		
+		Assert.assertEquals(6, keyValueMap.size());
+		Assert.assertEquals("1", keyValueMap.get("Prim Int Prop"));
+		Assert.assertEquals("100", keyValueMap.get("Int Obj Prop"));
+		Assert.assertEquals("some string", keyValueMap.get("Str Prop"));
+		Assert.assertTrue(keyValueMap.containsKey("Date Prop"));
+		Assert.assertEquals("2000-01-01 00:00:00", keyValueMap.get("Date Prop Str"));
+		Assert.assertNull(keyValueMap.get("Read Only Prop"));
+		  		
+	}
+	
+
+	private Object getStringOrDateValue(Cell cell) {
+		if (cell == null) {
+			return null;
+		}
+
+		if (cell.getCellType() == Cell.CELL_TYPE_BLANK) {
+			return null;
+		}
+
+		if (cell.getCellType() == Cell.CELL_TYPE_BOOLEAN) {
+			return String.valueOf(cell.getBooleanCellValue());
+		}
+
+		if (cell.getCellType() == Cell.CELL_TYPE_ERROR) {
+			return null;
+		}
+
+		if (cell.getCellType() == Cell.CELL_TYPE_FORMULA) {
+			return null;
+		}
+
+		if (cell.getCellType() == Cell.CELL_TYPE_NUMERIC) {
+			if (DateUtil.isCellDateFormatted(cell)) {
+				return cell.getDateCellValue();
+			} else {
+				double v = cell.getNumericCellValue();
+				return String.valueOf(v);
+			}
+		}
+
+		if (cell.getCellType() == Cell.CELL_TYPE_STRING) {
+			String s = cell.getStringCellValue();
+			return StringUtils.trimToNull(s);
+		}
+		return null;
+	}
+
+	private List<Cell> getAllCells(Row row) {
+		List<Cell> cells = new ArrayList<>();
+		Iterator<Cell> it = row.cellIterator();
+		while (it.hasNext()) {
+			Cell cell = it.next();
+			cells.add(cell);
+		}
+		return cells;
 	}
 	
 
@@ -380,6 +477,29 @@ public class SsioIntegrationTest {
 	}
 	
 	@Test
+	public void parseTest_UsingGeneratedReverseHeader_FileAsInput() throws InvalidFormatException, InvalidHeaderRowException, ParseException, IllegalArgumentException, IllegalAccessException, NoSuchFieldException, SecurityException {
+		ByteArrayInputStream in = toByteArrayInputStreamAndClose(this.getClass().getResourceAsStream("/parse-test-for-generated-reverse-header.xlsx"));		 
+		File inputFile = createFile("parseTest_UsingGeneratedReverseHeader_FileAsInput");
+		copyInputToFileAndClose(in, inputFile); 
+		
+		List<HeaderUtilsTestRecord> records = Ssio.parseIgnoringErrors(inputFile, HeaderUtilsTestRecord.class);
+
+		HeaderUtilsTestRecord record = records.get(0);
+		Assert.assertEquals(1, records.size());
+		
+		Assert.assertEquals(1, record.getPrimIntProp());
+		Assert.assertEquals(Integer.valueOf(100), record.getIntObjProp());
+		Assert.assertEquals(DateUtils.parseDate("2000-01-01 00:00:00", new String[] {"yyyy-MM-dd HH:mm:ss"}), record.getDateProp());		 
+		Assert.assertNull(record.getReadOnlyProp());
+		
+		Field writedOnlyPropField = record.getClass().getDeclaredField("writeOnlyProp");
+		writedOnlyPropField.setAccessible(true);
+		
+		Assert.assertEquals("write-only string", writedOnlyPropField.get(record));
+ 
+	}
+	
+	@Test
 	public void parseTest_IgnoringErrors_File() throws InvalidFormatException, InvalidHeaderRowException {
 		ByteArrayInputStream in = toByteArrayInputStreamAndClose(this.getClass().getResourceAsStream("/parse-test-data-half-correct.xlsx"));	
 		File inputFile = createFile("parseTest_IgnoringErrors_File_As_Input");
@@ -391,8 +511,6 @@ public class SsioIntegrationTest {
 		Assert.assertEquals(1, records.size());
 		Assert.assertEquals(123, record.getPrimInt());
 	}	
-
-
 
 	@Test
 	public void parseTest_AllStringCells() throws InvalidFormatException, InvalidHeaderRowException {
@@ -498,8 +616,11 @@ public class SsioIntegrationTest {
 		dir.mkdirs();
 		String filename = prefix + "-" + System.nanoTime() + ".xlsx";
 		File file = new File(dir, filename);
+		System.out.println("File created: " + file.getAbsolutePath());
 		return file;
 	}
+	
+ 
 
 	@SuppressWarnings("unused")
 	private static class ITRecord {

@@ -43,6 +43,21 @@ import org.sep4j.support.SepReflectionHelper;
  * 
  */
 public class Ssio {
+	
+	/**
+	 * please check the doc of {@link #save(Map, Collection, OutputStream)} .
+	 * The difference here is that the headerMap is automatically worked out
+	 * with a rule like {"firstName" (a property in the record class) => "First
+	 * Name" (a spreadsheet header column) }. For details please check
+	 * {@link HeaderUtils#generateHeaderMapFromProps(Class)}
+	 * 
+	 * @param recordClass
+	 * @param records
+	 * @param outputStream
+	 */
+	public static <T> void save(Class<T> recordClass, Collection<T> records, OutputStream outputStream) {
+		save(HeaderUtils.generateHeaderMapFromProps(recordClass), records, outputStream, null, null, true);
+	}
 
 	/**
 	 * save records to a new workbook even if there are datum errors in the
@@ -78,6 +93,23 @@ public class Ssio {
 			throw new IllegalStateException(e);
 		}
 	}
+	
+	/**
+	 * please check the doc of {@link #save(Class, Collection, OutputStream)}
+	 * @param recordClass
+	 * @param records
+	 * @param outputFile
+	 */
+	public static <T> void save(Class<T> recordClass, Collection<T> records, File outputFile) {
+		try (OutputStream outputStream = new FileOutputStream(outputFile)) {
+			save(recordClass, records, outputStream);
+		} catch (FileNotFoundException e) {
+			throw new IllegalArgumentException(e);
+		} catch (IOException e) {
+			throw new IllegalStateException(e);
+		}
+	}
+	
 
 	/**
 	 * save records to a new workbook even if there are datum errors in the
@@ -208,6 +240,39 @@ public class Ssio {
 			return new ArrayList<T>();
 		}
 
+	}
+	
+	/**
+	 * Please check the doc of
+	 * {@link #parseIgnoringErrors(Map, InputStream, Class)}. The difference
+	 * here is that the reverseHeaderMap is automatically worked out with a rule
+	 * like {"First Name" (a spreadsheet header) => "firstName" (a property
+	 * in the record class) }.  For details please check  {@link HeaderUtils#generateReverseHeaderMapFromProps(Class)}
+	 * 
+	 * @param inputStream
+	 * @param recordClass
+	 * @return
+	 */
+	public static <T> List<T> parseIgnoringErrors(InputStream inputStream, Class<T> recordClass) {
+		return parseIgnoringErrors(HeaderUtils.generateReverseHeaderMapFromProps(recordClass), inputStream,
+				recordClass);
+	}
+	
+	/**
+	 * Please check the doc of {@link #parseIgnoringErrors(InputStream, Class)}
+	 * @param inputFile
+	 * @param recordClass
+	 * @return
+	 */
+	public static <T> List<T> parseIgnoringErrors(File inputFile, Class<T> recordClass) {
+		try (InputStream input = new FileInputStream(inputFile)) {
+			return parseIgnoringErrors(HeaderUtils.generateReverseHeaderMapFromProps(recordClass), input,
+					recordClass);
+		} catch (FileNotFoundException e) {
+			throw new IllegalArgumentException(e);
+		} catch (IOException e) {
+			throw new IllegalStateException(e);
+		}		
 	}
 	
 	/**
