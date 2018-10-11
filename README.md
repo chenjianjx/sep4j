@@ -37,7 +37,7 @@ Ssio.save(
     userList, spreadsheetOutputStream);
 ```
 
-You can even just the program generate a header map for you: 
+You can even let the program generate a header map for you: 
 ````java
 Ssio.save(User.class, userList, spreadsheetOutputStream);
 ````
