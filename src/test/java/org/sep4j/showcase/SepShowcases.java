@@ -59,6 +59,21 @@ public class SepShowcases {
 		FileUtils.writeByteArrayToFile(theFile, spreadsheet);
 		System.out.println("File saved as " + theFile.getAbsolutePath());
 	}
+	
+	@Test
+	public void saveWithGeneratedHeaderMap() throws IOException {
+
+		Collection<User> userList = buildTestUsers();
+		ByteArrayOutputStream spreadsheetOutputStream = new ByteArrayOutputStream();
+
+		Ssio.save(User.class, userList, spreadsheetOutputStream);
+
+		byte[] spreadsheet = spreadsheetOutputStream.toByteArray();
+		File theFile = createFile("saveWithGeneratedHeaderMap");
+		FileUtils.writeByteArrayToFile(theFile, spreadsheet);
+		System.out.println("File saved as " + theFile.getAbsolutePath());
+	}
+	
 
 	@Test
 	public void parse() throws IOException {
@@ -136,6 +151,15 @@ public class SepShowcases {
 		// inputStream, User.class);
 
 		// System.out.println(users);
+	}
+	
+	
+	@Test
+	public void parseWithGeneratedReverseHeaderMap() throws IOException {
+		File file = doSave();
+		InputStream inputStream = toByteArrayInputStreamAndClose(new FileInputStream(file));
+		List<User> users = Ssio.parseIgnoringErrors(inputStream, User.class);
+		System.out.println(users);	 
 	}
 
 	private File doSave() throws IOException {
