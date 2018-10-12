@@ -175,7 +175,6 @@ public void setRoles(String rolesString){
 #### Append records to a spreadsheet file
 ````
 Ssio.appendTo(headerMap, newListToAppend, theFile);
-
 ````
 ----
 
