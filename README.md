@@ -12,7 +12,7 @@ It's a wrapper of Apache POI, with which you can do javabeans <-> spreadsheet co
 	<dependency>
 		<groupId>com.github.chenjianjx</groupId>
 		<artifactId>sep4j</artifactId>
-		<version>2.0.3</version>
+		<version>2.0.4</version>
 	</dependency>
 	..		
 </dependencies>	
@@ -171,6 +171,12 @@ public void setRoles(String rolesString){
     - Cell with null value will lead to a null property value.  However, if the property is of primitive type such as "int", "long", then a CellError will be raised.
 
 ---
+### Advanced Usages
+#### Append records to a spreadsheet file
+````
+Ssio.appendTo(headerMap, newListToAppend, theFile);
+````
+----
 
 ### Misc
 

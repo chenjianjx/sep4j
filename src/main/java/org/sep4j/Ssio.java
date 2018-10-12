@@ -50,7 +50,6 @@ public class Ssio {
 	 * with a rule like {"firstName" (a property in the record class) => "First
 	 * Name" (a spreadsheet header column) }. For details please check
 	 * {@link HeaderUtils#generateHeaderMapFromProps(Class)}
-	 * 
 	 * @param recordClass
 	 * @param records
 	 * @param outputStream
@@ -183,6 +182,75 @@ public class Ssio {
 		}
 	}
 
+
+	/**
+	 * please check the doc of {@link #appendTo(Map, Collection, File, String, List)}
+     */
+	public static <T> void appendTo(Map<String, String> headerMap, Collection<T> records, File file) {
+		appendTo(headerMap, records, file, null, null);
+	}
+
+	/**
+	 * append records to an existing spreadsheet file
+	 * @param headerMap
+	 *            {@code <propName, headerText>, for example <"username" field of User class, "User Name" as the spreadsheet header text>. }
+	 * @param records
+	 *            the records to save.
+	 * @param file
+	 *            the file to append to
+	 * @param datumErrPlaceholder
+	 *            if some datum is wrong, write this place holder to the cell
+	 *            (stillSaveIfDataError should be set true)
+	 * @param datumErrors
+	 *            all data errors in the records
+	 *
+	 * @param <T>
+	 *            the java type of records
+     */
+	public static <T> void appendTo(Map<String, String> headerMap, Collection<T> records, File file,
+									String datumErrPlaceholder, List<DatumError> datumErrors) {
+		validateHeaderMap(headerMap);
+
+		if (records == null) {
+			records = new ArrayList<T>();
+		}
+
+		Workbook workbook;
+		try(InputStream inputStream = new FileInputStream(file)){
+			workbook = toWorkbook(inputStream);
+			if (workbook.getNumberOfSheets() <= 0) {
+				throw new IllegalArgumentException("There is no sheet in file " + file);
+			}
+
+			Sheet sheet = workbook.getSheetAt(0);
+			int lastRowNum = sheet.getLastRowNum(); //1-based
+
+			int recordIndex = 0;
+			int rowIndex = lastRowNum + 1;
+			for (T record : records) {
+				createRow(headerMap, record, recordIndex, sheet, rowIndex,
+						datumErrPlaceholder, datumErrors);
+				recordIndex++;
+				rowIndex++;
+			}
+		} catch (FileNotFoundException e) {
+			throw new IllegalStateException(e);
+		} catch (IOException e) {
+			throw new IllegalStateException(e);
+		} catch (InvalidFormatException e) {
+			throw new IllegalStateException(e);
+		}
+
+		try(OutputStream outputStream = new FileOutputStream(file)){
+			workbook.write(outputStream);
+		} catch (FileNotFoundException e) {
+			throw new IllegalStateException(e);
+		} catch (IOException e) {
+			throw new IllegalStateException(e);
+		}
+	}
+
+
 	/**
 	 * save records to a new workbook only if there are no datum errors in the
 	 * records. Any datum error will lead to datumErrPlaceholder being written
@@ -276,7 +344,7 @@ public class Ssio {
 	}
 	
 	/**
-	 * please check the doc of {@link #parseIgnoringErrors(Map, InputStream, List, Class)}.
+	 * please check the doc of {@link #parseIgnoringErrors(Map, InputStream, Class)}.
 	 * @param reverseHeaderMap
 	 * @param inputFile
 	 * @param recordClass
