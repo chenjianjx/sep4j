@@ -58,8 +58,30 @@ public class SepShowcases {
 		File theFile = createFile("saveWithGuava");
 		FileUtils.writeByteArrayToFile(theFile, spreadsheet);
 		System.out.println("File saved as " + theFile.getAbsolutePath());
+
 	}
-	
+
+	@Test
+	public void saveAndAppend() throws IOException {
+
+		Collection<User> userList = buildTestUsers();
+
+		File theFile = createFile("saveAndAppend");
+		ImmutableMap<String, String> headerMap = ImmutableMap.of("userId", "User Id", "firstName",
+				"First Name", "lastName", "Last Name");
+
+		Ssio.save(headerMap, userList, theFile);
+		System.out.println("File saved as " + theFile.getAbsolutePath());
+
+		Collection<User> newListToAppend = buildTestUsers();
+		Ssio.appendTo(headerMap, newListToAppend, theFile);
+		System.out.println("Records appended to " + theFile.getAbsolutePath());
+	}
+
+
+
+
+
 	@Test
 	public void saveWithGeneratedHeaderMap() throws IOException {
 
@@ -215,7 +237,7 @@ public class SepShowcases {
 	}
 
 	private File createFile(String prefix) {
-		File dir = new File(System.getProperty("user.home"), "/temp/sep");
+		File dir = new File(System.getProperty("java.io.tmpdir"), "/sep4j/show-case");
 		dir.mkdirs();
 		String filename = prefix + System.currentTimeMillis() + ".xlsx";
 		File file = new File(dir, filename);

@@ -134,25 +134,28 @@ public class SsioIntegrationTest {
 
 	
 	@Test
-	public void saveTest_File() throws InvalidFormatException, IOException {
+	public void saveAndAppendTest_File() throws InvalidFormatException, IOException {
 		LinkedHashMap<String, String> headerMap = new LinkedHashMap<String, String>();
 		headerMap.put("primInt", "Primitive Int");
 		headerMap.put("fake", "Not Real");
+		headerMap.put("str", "Str");
 
 		ITRecord record = new ITRecord();
 		record.setPrimInt(123);
+		record.setStr("first row string");
 
 		Collection<ITRecord> records = Arrays.asList(record);
-		File outputFile = createFile("saveTest_File");
+		File theFile = createFile("saveAndAppendTest_File");
 		String datumErrPlaceholder = "!!ERROR!!";
 		List<DatumError> datumErrors = new ArrayList<DatumError>();
 
 		// save it
-		Ssio.save(headerMap, records, outputFile, datumErrPlaceholder, datumErrors);		
-		byte[] spreadsheet = FileUtils.readFileToByteArray(outputFile);
+		Ssio.save(headerMap, records, theFile, datumErrPlaceholder, datumErrors);
+
 
 
 		// then parse it
+		byte[] spreadsheet = FileUtils.readFileToByteArray(theFile);
 		Workbook workbook = WorkbookFactory.create(new ByteArrayInputStream(spreadsheet));
 
 		/*** do assertions ***/
@@ -162,14 +165,18 @@ public class SsioIntegrationTest {
 
 		Cell cell00 = headerRow.getCell(0);
 		Cell cell01 = headerRow.getCell(1);
+		Cell cell02 = headerRow.getCell(2);
 		Cell cell10 = dataRow.getCell(0);
 		Cell cell11 = dataRow.getCell(1);
+		Cell cell12 = dataRow.getCell(2);
 
 		// texts
 		Assert.assertEquals("Primitive Int", cell00.getStringCellValue());
 		Assert.assertEquals("Not Real", cell01.getStringCellValue());
+		Assert.assertEquals("Str", cell02.getStringCellValue());
 		Assert.assertEquals("123", cell10.getStringCellValue());
 		Assert.assertEquals("!!ERROR!!", cell11.getStringCellValue());
+		Assert.assertEquals("first row string", cell12.getStringCellValue());
 
 		// errors
 		DatumError datumError = datumErrors.get(0);
@@ -178,7 +185,79 @@ public class SsioIntegrationTest {
 		Assert.assertEquals("fake", datumError.getPropName());
 		Assert.assertTrue(datumError.getCause().getMessage().contains("no getter method"));
 
-	}	
+		// now append 2 records
+		ITRecord record2 = new ITRecord();
+		record2.setPrimInt(456);
+		record2.setStr("row2 string");
+
+		ITRecord record3 = new ITRecord();
+		record3.setPrimInt(789);
+		record3.setStr("row3 string");
+
+		// append them
+		String datumErrPlaceholder2 = "!!APPENED-ROW-ERROR!!";
+		List<DatumError> datumErrors2 = new ArrayList<>();
+		Ssio.appendTo(headerMap, Arrays.asList(record2, record3), theFile, datumErrPlaceholder2, datumErrors2);
+		// parse again
+		spreadsheet = FileUtils.readFileToByteArray(theFile);
+		workbook = WorkbookFactory.create(new ByteArrayInputStream(spreadsheet));
+
+		/*** do assertions again ***/
+		sheet = workbook.getSheetAt(0);
+		headerRow = sheet.getRow(0);
+		dataRow = sheet.getRow(1);
+
+		Assert.assertEquals(3, sheet.getLastRowNum());
+
+		// the original rows should not be changed
+		cell00 = headerRow.getCell(0);
+		cell01 = headerRow.getCell(1);
+		cell02 = headerRow.getCell(2);
+		cell10 = dataRow.getCell(0);
+		cell11 = dataRow.getCell(1);
+		cell12 = dataRow.getCell(2);
+
+		Assert.assertEquals("Primitive Int", cell00.getStringCellValue());
+		Assert.assertEquals("Not Real", cell01.getStringCellValue());
+		Assert.assertEquals("Str", cell02.getStringCellValue());
+		Assert.assertEquals("123", cell10.getStringCellValue());
+		Assert.assertEquals("!!ERROR!!", cell11.getStringCellValue());
+		Assert.assertEquals("first row string", cell12.getStringCellValue());
+
+		// now the new row
+		Row dataRow2 = sheet.getRow(2);
+		Cell cell20 = dataRow2.getCell(0);
+		Cell cell21 = dataRow2.getCell(1);
+		Cell cell22 = dataRow2.getCell(2);
+
+		Row dataRow3 = sheet.getRow(3);
+		Cell cell30 = dataRow3.getCell(0);
+		Cell cell31 = dataRow3.getCell(1);
+		Cell cell32 = dataRow3.getCell(2);
+
+		Assert.assertEquals("456", cell20.getStringCellValue());
+		Assert.assertEquals("!!APPENED-ROW-ERROR!!", cell21.getStringCellValue());
+		Assert.assertEquals("row2 string", cell22.getStringCellValue());
+
+		Assert.assertEquals("789", cell30.getStringCellValue());
+		Assert.assertEquals("!!APPENED-ROW-ERROR!!", cell31.getStringCellValue());
+		Assert.assertEquals("row3 string", cell32.getStringCellValue());
+
+		// new errors
+		Assert.assertEquals(2, datumErrors2.size());
+
+		DatumError firstAppendingError = datumErrors2.get(0);
+		Assert.assertEquals(0, firstAppendingError.getRecordIndex());
+		Assert.assertEquals("fake", firstAppendingError.getPropName());
+		Assert.assertTrue(firstAppendingError.getCause().getMessage().contains("no getter method"));
+
+
+		DatumError secondAppendingError = datumErrors2.get(1);
+		Assert.assertEquals(1, secondAppendingError.getRecordIndex());
+		Assert.assertEquals("fake", secondAppendingError.getPropName());
+		Assert.assertTrue(secondAppendingError.getCause().getMessage().contains("no getter method"));
+	}
+
 	
 	@Test
 	public void saveTest_IgnoringErrors() throws InvalidFormatException, IOException {
