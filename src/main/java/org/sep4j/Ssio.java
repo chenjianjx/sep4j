@@ -61,13 +61,13 @@ public class Ssio {
 	}
 
 	/**
-	 * doSave records to a new workbook even if there are datum errors in the
+	 * save records to a new workbook even if there are datum errors in the
 	 * records. Any datum error will lead to an empty cell.
 	 * 
 	 * @param headerMap
 	 *            {@code <propName, headerText>, for example <"username" field of User class, "User Name" as the spreadsheet header text>. }
 	 * @param records
-	 *            the records to doSave.
+	 *            the records to save.
 	 * @param outputStream
 	 *            the output stream for the spreadsheet
 	 * @param <T>
@@ -113,7 +113,7 @@ public class Ssio {
 	
 
 	/**
-	 * doSave records to a new workbook even if there are datum errors in the
+	 * save records to a new workbook even if there are datum errors in the
 	 * records. Any datum error will lead to datumErrPlaceholder being written
 	 * to the cell.
 	 * 
@@ -121,7 +121,7 @@ public class Ssio {
 	 *            {@code <propName, headerText>, for example <"username" field of User class, "User Name" as the spreadsheet header text>. }
 	 * 
 	 * @param records
-	 *            the records to doSave.
+	 *            the records to save.
 	 * @param outputStream
 	 *            the output stream for the spreadsheet
 	 * @param datumErrPlaceholder
@@ -138,7 +138,7 @@ public class Ssio {
 	
 
 	/**
-	 * doSave records to a new workbook even if there are datum errors in the
+	 * save records to a new workbook even if there are datum errors in the
 	 * records. Any datum error will lead to datumErrPlaceholder being written
 	 * to the cell. All the datum errors will be saved to datumErrors indicating
 	 * the recordIndex of the datum
@@ -146,7 +146,7 @@ public class Ssio {
 	 * @param headerMap
 	 *            {@code <propName, headerText>, for example <"username" field of User class, "User Name" as the spreadsheet header text>. }
 	 * @param records
-	 *            the records to doSave.
+	 *            the records to save.
 	 * @param outputStream
 	 *            the output stream for the spreadsheet
 	 * @param datumErrPlaceholder
@@ -197,7 +197,7 @@ public class Ssio {
 	 * @param headerMap
 	 *            {@code <propName, headerText>, for example <"username" field of User class, "User Name" as the spreadsheet header text>. }
 	 * @param records
-	 *            the records to doSave.
+	 *            the records to save.
 	 * @param file
 	 *            the file to append to
 	 * @param datumErrPlaceholder
@@ -219,7 +219,7 @@ public class Ssio {
 	 * @param headerMap
 	 *            {@code <propName, headerText>, for example <"username" field of User class, "User Name" as the spreadsheet header text>. }
 	 * @param records
-	 *            the records to doSave.
+	 *            the records to save.
 	 * @param recordType the type of data structure of the record
 	 *
 	 * @param file
@@ -278,7 +278,7 @@ public class Ssio {
 
 
 	/**
-	 * doSave records to a new workbook only if there are no datum errors in the
+	 * save records to a new workbook only if there are no datum errors in the
 	 * records. Any datum error will lead to datumErrPlaceholder being written
 	 * to the cell. All the datum errors will be saved to datumErrors indicating
 	 * the recordIndex of the datum
@@ -286,7 +286,7 @@ public class Ssio {
 	 * @param headerMap
 	 *            {@code <propName, headerText>, for example <"username" field of User class, "User Name" as the spreadsheet header text>. }
 	 * @param records
-	 *            the records to doSave.
+	 *            the records to save.
 	 * @param outputStream
 	 *            the output stream for the spreadsheet
 	 * @param datumErrPlaceholder
@@ -473,12 +473,12 @@ public class Ssio {
 	}
 
 	/**
-	 * doSave records to a new workbook.
+	 * save records to a new workbook.
 	 * 
 	 * @param headerMap
 	 *            {@code <propName, headerText>, for example <"username" field of User class, "User Name" as the spreadsheet header text>. }
 	 * @param records
-	 *            the records to doSave.
+	 *            the records to save.
 	 * @param outputStream
 	 *            the output stream for the spreadsheet
 	 * @param datumErrPlaceholder
@@ -487,7 +487,7 @@ public class Ssio {
 	 * @param datumErrors
 	 *            all data errors in the records
 	 * @param stillSaveIfDataError
-	 *            if there are errors in data, should we still doSave the records
+	 *            if there are errors in data, should we still save the records
 	 *            ?
 	 * 
 	 * 

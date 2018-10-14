@@ -62,7 +62,7 @@ public class SsioIntegrationTest {
 		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 		List<DatumError> datumErrors = new ArrayList<DatumError>();
 
-		// doSave it
+		// save it
 		Ssio.saveIfNoDatumError(headerMap, records, outputStream, null, datumErrors);
 
 		byte[] spreadsheet = outputStream.toByteArray();
@@ -85,11 +85,11 @@ public class SsioIntegrationTest {
 		String datumErrPlaceholder = "!!ERROR!!";
 		List<DatumError> datumErrors = new ArrayList<DatumError>();
 
-		// doSave it
+		// save it
 		Ssio.save(headerMap, records, outputStream, datumErrPlaceholder, datumErrors);
 		byte[] spreadsheet = outputStream.toByteArray();
 
-		// do a doSave for human eye check
+		// do a save for human eye check
 		FileUtils.writeByteArrayToFile(createFile("saveTest_ValidAndInvalid"), spreadsheet);
 
 		// then parse it
@@ -149,7 +149,7 @@ public class SsioIntegrationTest {
 		String datumErrPlaceholder = "!!ERROR!!";
 		List<DatumError> datumErrors = new ArrayList<DatumError>();
 
-		// doSave it
+		// save it
 		Ssio.save(headerMap, records, theFile, datumErrPlaceholder, datumErrors);
 
 
@@ -268,11 +268,11 @@ public class SsioIntegrationTest {
 
 		Collection<ITRecord> records = Arrays.asList(record);
 		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-		// doSave it
+		// save it
 		Ssio.save(headerMap, records, outputStream);
 		byte[] spreadsheet = outputStream.toByteArray();
 
-		// do a doSave for human eye check
+		// do a save for human eye check
 		FileUtils.writeByteArrayToFile(createFile("saveTest_IngoringErrors"), spreadsheet);
 
 		// then parse it
@@ -314,7 +314,7 @@ public class SsioIntegrationTest {
 		Collection<ITRecord> records = Arrays.asList(record);
 		File outputFile = createFile("saveTest_IgnoringErrors_File");
 
-		// doSave it
+		// save it
 		Ssio.save(headerMap, records, outputFile);	
 		
 
@@ -357,7 +357,7 @@ public class SsioIntegrationTest {
 
 		Collection<HeaderUtilsTestRecord> records = Arrays.asList(record);
 		File outputFile = createFile("saveTest_UsingGeneratedHeader_File");
-		// doSave it
+		// save it
 		Ssio.save(HeaderUtilsTestRecord.class, records, outputFile);
 		
 
@@ -440,11 +440,11 @@ public class SsioIntegrationTest {
 	public void saveTest_HeadersOnly() throws InvalidFormatException, IOException {
 
 		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-		// doSave it
+		// save it
 		Ssio.save(ITRecord.getHeaderMap(), null, outputStream);
 		byte[] spreadsheet = outputStream.toByteArray();
 
-		// do a doSave for human eye check
+		// do a save for human eye check
 		FileUtils.writeByteArrayToFile(createFile("saveTest_HeadersOnly"), spreadsheet);
 
 		// then parse it
@@ -476,11 +476,11 @@ public class SsioIntegrationTest {
 		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 		List<DatumError> datumErrors = new ArrayList<DatumError>();
 
-		// doSave it
+		// save it
 		Ssio.save(headerMap, records, outputStream, null, datumErrors);
 		byte[] spreadsheet = outputStream.toByteArray();
 
-		// do a doSave for human eye check
+		// do a save for human eye check
 		FileUtils.writeByteArrayToFile(createFile("saveTest_BigNumber"), spreadsheet);
 
 		// then parse it
