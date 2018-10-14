@@ -739,6 +739,7 @@ public class SsioIntegrationTest {
 		ITRecord record = records.get(0);
 		Assert.assertEquals(1, records.size());
 		Assert.assertEquals(123, record.getPrimInt());
+		Assert.assertNull(record.getStr());
 
 		CellError error = cellErrors.get(0);
 		Assert.assertEquals(1, cellErrors.size());

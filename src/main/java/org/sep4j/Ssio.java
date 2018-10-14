@@ -15,6 +15,7 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.sep4j.support.FunctionThrowingParseException;
 import org.sep4j.support.SepBasicTypeConverts;
 import org.sep4j.support.SepConstants;
 import org.sep4j.support.SepRecordType;
@@ -22,7 +23,6 @@ import org.sep4j.support.SepReflectionHelper;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -37,18 +37,25 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
+import java.util.function.Function;
+
+import static org.sep4j.HeaderUtils.generateReverseHeaderMapFromProps;
 
 /**
  * The facade to do records saving and retrieving. Ssio = SpreadSheet
  * Input/Output
- * 
+ *
  * @author chenjianjx
- * 
- * 
+ *
+ *
  */
 public class Ssio {
 
-	
+    private Ssio(){
+    }
+
+
 	/**
 	 * please check the doc of {@link #save(Map, Collection, OutputStream)} .
 	 * The difference here is that the headerMap is automatically worked out
@@ -73,7 +80,7 @@ public class Ssio {
 	/**
 	 * save records to a new workbook even if there are datum errors in the
 	 * records. Any datum error will lead to an empty cell.
-	 * 
+	 *
 	 * @param headerMap
 	 *            {@code <propName, headerText>, for example <"username" field of User class, "User Name" as the spreadsheet header text>. }
 	 * @param records
@@ -82,7 +89,7 @@ public class Ssio {
 	 *            the output stream for the spreadsheet
 	 * @param <T>
 	 *            the java type of records
-	 * 
+	 *
 	 */
 	public static <T> void save(Map<String, String> headerMap,
 			Collection<T> records, OutputStream outputStream) {
@@ -105,11 +112,7 @@ public class Ssio {
 	 * @param outputFile
 	 */
 	public static <T> void save(Map<String, String> headerMap, Collection<T> records, File outputFile) {
-		try (OutputStream outputStream = toStream(outputFile)) {
-			save(headerMap, records, outputStream);
-		} catch (IOException e) {
-			throw new IllegalStateException(e);
-		}
+		consumeAsOutputStream(outputFile, outputStream -> save(headerMap, records, outputStream));
 	}
 
 
@@ -117,11 +120,8 @@ public class Ssio {
 	 * please check the doc of {@link #saveMaps(Map, Collection, OutputStream)}
 	 */
 	public static void saveMaps(Map<String, String> headerMap, Collection<Map<String, Object>> records, File outputFile) {
-		try (OutputStream outputStream = toStream(outputFile)) {
-			saveMaps(headerMap, records, outputStream);
-		} catch (IOException e) {
-			throw new IllegalStateException(e);
-		}
+        consumeAsOutputStream(outputFile, outputStream -> saveMaps(headerMap, records, outputStream));
+
 	}
 
 
@@ -132,41 +132,26 @@ public class Ssio {
 	 * @param outputFile
 	 */
 	public static <T> void save(Class<T> recordClass, Collection<T> records, File outputFile) {
-		try (OutputStream outputStream = toStream(outputFile)) {
-			save(recordClass, records, outputStream);
-		} catch (IOException e) {
-			throw new IllegalStateException(e);
-		}
-	}
+        consumeAsOutputStream(outputFile, outputStream -> save(recordClass, records, outputStream));
 
-	private static FileOutputStream toStream(File outputFile) {
-		try {
-			return new FileOutputStream(outputFile);
-		} catch (FileNotFoundException e) {
-			throw new IllegalStateException(e);
-		}
 	}
 
 	/**
 	 * please check the doc of {@link #saveMaps(Map, Collection, File)}
 	 */
 	public static void saveMaps(Collection<String> keys, Collection<Map<String, Object>> records, File outputFile) {
-		try (OutputStream outputStream = toStream(outputFile)) {
-			saveMaps(keys, records, outputStream);
-		} catch (IOException e) {
-			throw new IllegalStateException(e);
-		}
+        consumeAsOutputStream(outputFile, outputStream -> saveMaps(keys, records, outputStream));
 	}
-	
+
 
 	/**
 	 * save records to a new workbook even if there are datum errors in the
 	 * records. Any datum error will lead to datumErrPlaceholder being written
 	 * to the cell.
-	 * 
+	 *
 	 * @param headerMap
 	 *            {@code <propName, headerText>, for example <"username" field of User class, "User Name" as the spreadsheet header text>. }
-	 * 
+	 *
 	 * @param records
 	 *            the records to save.
 	 * @param outputStream
@@ -182,14 +167,14 @@ public class Ssio {
 			String datumErrPlaceholder) {
 		doSave(headerMap, records, SepRecordType.JAVABEAN, outputStream, datumErrPlaceholder, null, true);
 	}
-	
+
 
 	/**
 	 * save records to a new workbook even if there are datum errors in the
 	 * records. Any datum error will lead to datumErrPlaceholder being written
 	 * to the cell. All the datum errors will be saved to datumErrors indicating
 	 * the recordIndex of the datum
-	 * 
+	 *
 	 * @param headerMap
 	 *            {@code <propName, headerText>, for example <"username" field of User class, "User Name" as the spreadsheet header text>. }
 	 * @param records
@@ -201,7 +186,7 @@ public class Ssio {
 	 *            (stillSaveIfDataError should be set true)
 	 * @param datumErrors
 	 *            all data errors in the records
-	 * 
+	 *
 	 * @param <T>
 	 *            the java type of records
 	 */
@@ -213,7 +198,7 @@ public class Ssio {
 	}
 
 
-	
+
 	/**
 	 * please check the doc of {@link #save(Map, Collection, OutputStream, String, List)}
 	 * @param headerMap
@@ -224,11 +209,10 @@ public class Ssio {
 	 */
 	public static <T> void save(Map<String, String> headerMap, Collection<T> records, File outputFile,
 			String datumErrPlaceholder, List<DatumError> datumErrors) {
-		try (OutputStream outputStream = toStream(outputFile)) {
-			doSave(headerMap, records, SepRecordType.JAVABEAN, outputStream, datumErrPlaceholder, datumErrors, true);
-		} catch (IOException e) {
-			throw new IllegalStateException(e);
-		}
+        consumeAsOutputStream(outputFile,
+                outputStream ->
+                        doSave(headerMap, records, SepRecordType.JAVABEAN, outputStream, datumErrPlaceholder, datumErrors, true));
+
 	}
 
 	/**
@@ -264,11 +248,9 @@ public class Ssio {
 	public static void saveMaps(Map<String, String> headerMap,
 								Collection<Map<String, Object>> records, File outputFile,
 								String datumErrPlaceholder, List<DatumError> datumErrors) {
-		try (OutputStream outputStream = toStream(outputFile)) {
-			saveMaps(headerMap, records, outputStream, datumErrPlaceholder, datumErrors);
-		} catch (IOException e) {
-			throw new IllegalStateException(e);
-		}
+
+        consumeAsOutputStream(outputFile,
+                outputStream -> saveMaps(headerMap, records, outputStream, datumErrPlaceholder, datumErrors));
 	}
 
 	/**
@@ -374,7 +356,7 @@ public class Ssio {
 			throw new IllegalStateException(e);
 		}
 
-		try(OutputStream outputStream = toStream(file)){
+		try(OutputStream outputStream = new FileOutputStream(file)){
 			workbook.write(outputStream);
 		} catch (IOException e) {
 			throw new IllegalStateException(e);
@@ -387,7 +369,7 @@ public class Ssio {
 	 * records. Any datum error will lead to datumErrPlaceholder being written
 	 * to the cell. All the datum errors will be saved to datumErrors indicating
 	 * the recordIndex of the datum
-	 * 
+	 *
 	 * @param headerMap
 	 *            {@code <propName, headerText>, for example <"username" field of User class, "User Name" as the spreadsheet header text>. }
 	 * @param records
@@ -399,7 +381,7 @@ public class Ssio {
 	 *            (stillSaveIfDataError should be set true)
 	 * @param datumErrors
 	 *            all data errors in the records
-	 * 
+	 *
 	 * @param <T>
 	 *            the java type of records
 	 */
@@ -416,7 +398,7 @@ public class Ssio {
 	 * The difference is that this class ignore any all the errors and make sure
 	 * no checked exception is thrown(There may still be unchecked exceptions,
 	 * though).
-	 * 
+	 *
 	 * @param reverseHeaderMap
 	 *            {@code <headerText, propName>, for example <"User Name" as the spreadsheet header, "username" of User class>.}
 	 * @param inputStream
@@ -457,23 +439,23 @@ public class Ssio {
 		}
 
 	}
-	
+
 	/**
 	 * Please check the doc of
 	 * {@link #parseIgnoringErrors(Map, InputStream, Class)}. The difference
 	 * here is that the reverseHeaderMap is automatically worked out with a rule
 	 * like {"First Name" (a spreadsheet header) => "firstName" (a property
 	 * in the record class) }.  For details please check  {@link HeaderUtils#generateReverseHeaderMapFromProps(Class)}
-	 * 
+	 *
 	 * @param inputStream
 	 * @param recordClass
 	 * @return
 	 */
 	public static <T> List<T> parseIgnoringErrors(InputStream inputStream, Class<T> recordClass) {
-		return parseIgnoringErrors(HeaderUtils.generateReverseHeaderMapFromProps(recordClass), inputStream,
+		return parseIgnoringErrors(generateReverseHeaderMapFromProps(recordClass), inputStream,
 				recordClass);
 	}
-	
+
 	/**
 	 * Please check the doc of {@link #parseIgnoringErrors(InputStream, Class)}
 	 * @param inputFile
@@ -481,14 +463,10 @@ public class Ssio {
 	 * @return
 	 */
 	public static <T> List<T> parseIgnoringErrors(File inputFile, Class<T> recordClass) {
-		try (InputStream input = new FileInputStream(inputFile)) {
-			return parseIgnoringErrors(HeaderUtils.generateReverseHeaderMapFromProps(recordClass), input,
-					recordClass);
-		} catch (IOException e) {
-			throw new IllegalStateException(e);
-		}		
+        return readAsInputStream(inputFile,
+                input -> parseIgnoringErrors(input, recordClass));
 	}
-	
+
 	/**
 	 * please check the doc of {@link #parseIgnoringErrors(Map, InputStream, Class)}.
 	 * @param reverseHeaderMap
@@ -499,11 +477,9 @@ public class Ssio {
 	public static <T> List<T> parseIgnoringErrors(
 			Map<String, String> reverseHeaderMap, File inputFile,
 			Class<T> recordClass) {
-		try (InputStream input = new FileInputStream(inputFile)) {
-			return parseIgnoringErrors(reverseHeaderMap, input, recordClass);
-		} catch (IOException e) {
-			throw new IllegalStateException(e);
-		}
+        return readAsInputStream(inputFile,
+			input -> parseIgnoringErrors(reverseHeaderMap, input, recordClass));
+
 	}
 
 	/**
@@ -511,22 +487,19 @@ public class Ssio {
 	 */
 	public static List<Map<String, String>> parseToMapsIgnoringErrors(
 			Map<String, String> reverseHeaderMap, File inputFile) {
-		try (InputStream input = new FileInputStream(inputFile)) {
-			return parseToMapsIgnoringErrors(reverseHeaderMap, input);
-		} catch (IOException e) {
-			throw new IllegalStateException(e);
-		}
+        return readAsInputStream(inputFile,
+                input -> parseToMapsIgnoringErrors(reverseHeaderMap, input));
 	}
-	
+
 
 	/**
-	 * <p>parse an spreadsheet to a list of beans. </p> 
+	 * <p>parse an spreadsheet to a list of beans. </p>
 	 * The columns are not identified by the column indexes, but by the header
 	 * rows' text of the columns specified by parameter reverseHeaderMap , i.e.
 	 * you don't have to worry which column to put "username". All you need to
 	 * do is to let the spreadsheet have a header column named "User Name" and
 	 * associate it with "username" property in parameter reverseHeaderMap
-	 * 
+	 *
 	 * @param reverseHeaderMap
 	 *            {@code <headerText, propName>, for example <"User Name" as the spreadsheet header, "username" of User class>.}
 	 * @param inputStream
@@ -628,16 +601,13 @@ public class Ssio {
 	 */
 	public static <T> List<T> parse(Map<String, String> reverseHeaderMap, File inputFile, List<CellError> cellErrors,
 			Class<T> recordClass) throws InvalidFormatException, InvalidHeaderRowException {
-		try (InputStream input = new FileInputStream(inputFile)) {
-			return parse(reverseHeaderMap, input, cellErrors, recordClass);
-		} catch (IOException e) {
-			throw new IllegalStateException(e);
-		}
+        return readAsInputStreamThrowingParseException(inputFile,
+                input -> parse(reverseHeaderMap, input, cellErrors, recordClass));
 	}
 
 	/**
 	 * save records to a new workbook.
-	 * 
+	 *
 	 * @param headerMap
 	 *            {@code <propName, headerText>, for example <"username" field of User class, "User Name" as the spreadsheet header text>. }
 	 * @param records
@@ -652,8 +622,8 @@ public class Ssio {
 	 * @param stillSaveIfDataError
 	 *            if there are errors in data, should we still save the records
 	 *            ?
-	 * 
-	 * 
+	 *
+	 *
 	 */
 	static <T> void doSave(Map<String, String> headerMap,
 						   Collection<T> records, SepRecordType recordType, OutputStream outputStream,
@@ -665,8 +635,7 @@ public class Ssio {
 			records = new ArrayList<T>();
 		}
 		if (outputStream == null) {
-			throw new IllegalArgumentException(
-					"the outputStream can not be null");
+			throw new IllegalArgumentException("the outputStream can not be null");
 		}
 
 		Workbook wb = new XSSFWorkbook();
@@ -836,13 +805,13 @@ public class Ssio {
 	/**
 	 * read the cell. it only supports: boolean, numeric, date(numeric cell type
 	 * + date cell format) and string.
-	 * 
+	 *
 	 * @param cell
 	 *            the cell to read
 	 * @return the date if it is a date cell, or else the string value (will be
 	 *         trimmed to null) . <br/>
-	 * 
-	 * 
+	 *
+	 *
 	 */
 	static Object readCellAsStringOrDate(Cell cell) {
 		if (cell == null) {
@@ -931,7 +900,7 @@ public class Ssio {
 					if (cellStringOrDate instanceof Date) {
 						value = DateFormatUtils.format(((Date) cellStringOrDate), SepConstants.DEAULT_DATE_FORMAT);
 					} else {
-						value = cellStringOrDate.toString();
+						value = cellStringOrDate == null? null: cellStringOrDate.toString();
 					}
 					map.put(propName, value);
 					break;
@@ -945,8 +914,8 @@ public class Ssio {
 
 	/**
 	 * meta info about a column
-	 * 
-	 * 
+	 *
+	 *
 	 */
 	private static class ColumnMeta {
 		public String propName;
@@ -1090,4 +1059,49 @@ public class Ssio {
 			throw new RuntimeException(e);
 		}
 	}
+
+	/**
+	 * use this template to avoid try/catch in every method.
+	 * This way the test converage rate can also be increased,
+	 * otherwise every catch statement in every method is normally covered by tests
+	 *
+	 * @param file
+	 * @param action
+	 */
+	private static void consumeAsOutputStream(File file, Consumer<OutputStream> action) {
+		try (OutputStream output = new FileOutputStream(file)) {
+			action.accept(output);
+		} catch (IOException e) {
+			throw new IllegalStateException(e);
+		}
+	}
+
+    /**
+     * use this template to avoid try/catch in every method.
+     * This way the test converage rate can also be increased,
+     * otherwise every catch statement in every method is normally covered by tests
+     *
+     * @param file
+     * @param action
+     */
+    private static <T> T readAsInputStreamThrowingParseException(File file, FunctionThrowingParseException<InputStream, T> action)
+            throws InvalidFormatException, InvalidHeaderRowException {
+        try (InputStream input = new FileInputStream(file)) {
+            return action.applyThrows(input);
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        } catch (InvalidFormatException e) {
+            throw e;
+        } catch (InvalidHeaderRowException e) {
+            throw e;
+        }
+    }
+
+    private static <T> T readAsInputStream(File file, Function<InputStream, T> action) {
+        try (InputStream input = new FileInputStream(file)) {
+            return action.apply(input);
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
+    }
 }
