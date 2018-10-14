@@ -2,6 +2,8 @@ package org.sep4j;
 
 import static org.junit.Assert.assertEquals;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 import org.junit.Test;
@@ -31,5 +33,26 @@ public class HeaderUtilsTest {
 		assertEquals("dateProp", reverseHeaderMap.get("Date Prop"));
 		assertEquals("writeOnlyProp", reverseHeaderMap.get("Write Only Prop"));
 	}
+
+	@Test
+	public void generateReverseHeaderMapFromColumnHeadersTest() {
+		List<String> headers = Arrays.asList("First Name", "Last Name");
+		Map<String, String> reverseHeaderMap = HeaderUtils.generateReverseHeaderMapFromColumnHeaders(headers);
+		assertEquals(2, reverseHeaderMap.size());
+		assertEquals("firstName", reverseHeaderMap.get("First Name"));
+		assertEquals("lastName", reverseHeaderMap.get("Last Name"));
+	}
+
+	@Test
+	public void mirrorMapTest() {
+		List<String> strings = Arrays.asList("First Name", "Last Name");
+		Map<String, String> reverseHeaderMap = HeaderUtils.mirrorMap(strings);
+		assertEquals(2, reverseHeaderMap.size());
+		assertEquals("First Name", reverseHeaderMap.get("First Name"));
+		assertEquals("Last Name", reverseHeaderMap.get("Last Name"));
+	}
+
+
+
 
 }

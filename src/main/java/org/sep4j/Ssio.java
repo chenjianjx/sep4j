@@ -3,6 +3,7 @@ package org.sep4j;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
+import org.apache.commons.lang.time.DateFormatUtils;
 import org.apache.poi.hssf.usermodel.HSSFCellStyle;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.Cell;
@@ -15,6 +16,7 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.sep4j.support.SepBasicTypeConverts;
+import org.sep4j.support.SepConstants;
 import org.sep4j.support.SepRecordType;
 import org.sep4j.support.SepReflectionHelper;
 
@@ -31,6 +33,7 @@ import java.lang.reflect.Method;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -83,7 +86,7 @@ public class Ssio {
 	 */
 	public static <T> void save(Map<String, String> headerMap,
 			Collection<T> records, OutputStream outputStream) {
-		doSave(headerMap, records, SepRecordType.JAVABEAN, outputStream, null, null, true);
+		save(headerMap, records, outputStream, null);
 	}
 
 	/**
@@ -102,10 +105,8 @@ public class Ssio {
 	 * @param outputFile
 	 */
 	public static <T> void save(Map<String, String> headerMap, Collection<T> records, File outputFile) {
-		try (OutputStream outputStream = new FileOutputStream(outputFile)) {
+		try (OutputStream outputStream = toStream(outputFile)) {
 			save(headerMap, records, outputStream);
-		} catch (FileNotFoundException e) {
-			throw new IllegalArgumentException(e);
 		} catch (IOException e) {
 			throw new IllegalStateException(e);
 		}
@@ -116,10 +117,8 @@ public class Ssio {
 	 * please check the doc of {@link #saveMaps(Map, Collection, OutputStream)}
 	 */
 	public static void saveMaps(Map<String, String> headerMap, Collection<Map<String, Object>> records, File outputFile) {
-		try (OutputStream outputStream = new FileOutputStream(outputFile)) {
-			save(headerMap, records, outputStream);
-		} catch (FileNotFoundException e) {
-			throw new IllegalArgumentException(e);
+		try (OutputStream outputStream = toStream(outputFile)) {
+			saveMaps(headerMap, records, outputStream);
 		} catch (IOException e) {
 			throw new IllegalStateException(e);
 		}
@@ -133,23 +132,27 @@ public class Ssio {
 	 * @param outputFile
 	 */
 	public static <T> void save(Class<T> recordClass, Collection<T> records, File outputFile) {
-		try (OutputStream outputStream = new FileOutputStream(outputFile)) {
+		try (OutputStream outputStream = toStream(outputFile)) {
 			save(recordClass, records, outputStream);
-		} catch (FileNotFoundException e) {
-			throw new IllegalArgumentException(e);
 		} catch (IOException e) {
 			throw new IllegalStateException(e);
 		}
 	}
 
+	private static FileOutputStream toStream(File outputFile) {
+		try {
+			return new FileOutputStream(outputFile);
+		} catch (FileNotFoundException e) {
+			throw new IllegalStateException(e);
+		}
+	}
+
 	/**
-	 * please check the doc of {@link #saveMaps(Collection, Collection, OutputStream)}
+	 * please check the doc of {@link #saveMaps(Map, Collection, File)}
 	 */
 	public static void saveMaps(Collection<String> keys, Collection<Map<String, Object>> records, File outputFile) {
-		try (OutputStream outputStream = new FileOutputStream(outputFile)) {
+		try (OutputStream outputStream = toStream(outputFile)) {
 			saveMaps(keys, records, outputStream);
-		} catch (FileNotFoundException e) {
-			throw new IllegalArgumentException(e);
 		} catch (IOException e) {
 			throw new IllegalStateException(e);
 		}
@@ -221,10 +224,8 @@ public class Ssio {
 	 */
 	public static <T> void save(Map<String, String> headerMap, Collection<T> records, File outputFile,
 			String datumErrPlaceholder, List<DatumError> datumErrors) {
-		try (OutputStream outputStream = new FileOutputStream(outputFile)) {
+		try (OutputStream outputStream = toStream(outputFile)) {
 			doSave(headerMap, records, SepRecordType.JAVABEAN, outputStream, datumErrPlaceholder, datumErrors, true);
-		} catch (FileNotFoundException e) {
-			throw new IllegalArgumentException(e);
 		} catch (IOException e) {
 			throw new IllegalStateException(e);
 		}
@@ -263,10 +264,8 @@ public class Ssio {
 	public static void saveMaps(Map<String, String> headerMap,
 								Collection<Map<String, Object>> records, File outputFile,
 								String datumErrPlaceholder, List<DatumError> datumErrors) {
-		try (OutputStream outputStream = new FileOutputStream(outputFile)) {
+		try (OutputStream outputStream = toStream(outputFile)) {
 			saveMaps(headerMap, records, outputStream, datumErrPlaceholder, datumErrors);
-		} catch (FileNotFoundException e) {
-			throw new IllegalArgumentException(e);
 		} catch (IOException e) {
 			throw new IllegalStateException(e);
 		}
@@ -369,18 +368,14 @@ public class Ssio {
 				recordIndex++;
 				rowIndex++;
 			}
-		} catch (FileNotFoundException e) {
-			throw new IllegalStateException(e);
 		} catch (IOException e) {
 			throw new IllegalStateException(e);
 		} catch (InvalidFormatException e) {
 			throw new IllegalStateException(e);
 		}
 
-		try(OutputStream outputStream = new FileOutputStream(file)){
+		try(OutputStream outputStream = toStream(file)){
 			workbook.write(outputStream);
-		} catch (FileNotFoundException e) {
-			throw new IllegalStateException(e);
 		} catch (IOException e) {
 			throw new IllegalStateException(e);
 		}
@@ -445,6 +440,23 @@ public class Ssio {
 		}
 
 	}
+
+	/**
+	 * please check the doc of {@link #parseToMaps(Map, InputStream, List)}
+     */
+	public static List<Map<String, String>> parseToMapsIgnoringErrors(
+			Map<String, String> reverseHeaderMap, InputStream inputStream) {
+		try {
+			return parseToMaps(reverseHeaderMap, inputStream, null);
+		} catch (InvalidFormatException e1) {
+			// ignore
+			return new ArrayList<Map<String, String>>();
+		} catch (InvalidHeaderRowException e1) {
+			// ignore
+			return new ArrayList<Map<String, String>>();
+		}
+
+	}
 	
 	/**
 	 * Please check the doc of
@@ -472,8 +484,6 @@ public class Ssio {
 		try (InputStream input = new FileInputStream(inputFile)) {
 			return parseIgnoringErrors(HeaderUtils.generateReverseHeaderMapFromProps(recordClass), input,
 					recordClass);
-		} catch (FileNotFoundException e) {
-			throw new IllegalArgumentException(e);
 		} catch (IOException e) {
 			throw new IllegalStateException(e);
 		}		
@@ -491,8 +501,18 @@ public class Ssio {
 			Class<T> recordClass) {
 		try (InputStream input = new FileInputStream(inputFile)) {
 			return parseIgnoringErrors(reverseHeaderMap, input, recordClass);
-		} catch (FileNotFoundException e) {
-			throw new IllegalArgumentException(e);
+		} catch (IOException e) {
+			throw new IllegalStateException(e);
+		}
+	}
+
+	/**
+	 * please check the doc of {@link #parseToMapsIgnoringErrors(Map, InputStream)}
+	 */
+	public static List<Map<String, String>> parseToMapsIgnoringErrors(
+			Map<String, String> reverseHeaderMap, File inputFile) {
+		try (InputStream input = new FileInputStream(inputFile)) {
+			return parseToMapsIgnoringErrors(reverseHeaderMap, input);
 		} catch (IOException e) {
 			throw new IllegalStateException(e);
 		}
@@ -529,9 +549,43 @@ public class Ssio {
 			InputStream inputStream, List<CellError> cellErrors,
 			Class<T> recordClass) throws InvalidFormatException,
 			InvalidHeaderRowException {
-		validateReverseHeaderMap(reverseHeaderMap);
-
 		validateRecordClass(recordClass);
+		return doParse(reverseHeaderMap, inputStream, recordClass, SepRecordType.JAVABEAN, cellErrors);
+	}
+
+	/**
+	 * <p>parse an spreadsheet to a list of Map<String,String>. </p>
+	 * The columns are not identified by the column indexes, but by the header
+	 * rows' text of the columns specified by parameter reverseHeaderMap , i.e.
+	 * you don't have to worry which column to put "username". All you need to
+	 * do is to let the spreadsheet have a header column named "User Name" and
+	 * associate it with "username" property in parameter reverseHeaderMap
+	 *
+	 * @param reverseHeaderMap
+	 *            {@code <headerText, propName>, for example <"User Name" as the spreadsheet header, "username" of User class>.}
+	 * @param inputStream
+	 *            the input stream of this spreadsheet
+	 * @param cellErrors
+	 *            the errors of data rows (not including header row) found while
+	 *            being parsed. The error here can tell you which cell is wrong.
+	 * @return a list of Map<String,String>  Please note Date cells in the spreadsheet will be formatted using {@link SepConstants#DEAULT_DATE_FORMAT}
+	 * @throws InvalidFormatException
+	 *             the input stream doesn't represent a valid spreadsheet
+	 * @throws InvalidHeaderRowException
+	 *             the header row of the spreadsheet is not valid, for example,
+	 *             no headerText accords to that of the reverseHeaerMap
+	 */
+	public static List<Map<String, String>> parseToMaps(Map<String, String> reverseHeaderMap,
+														InputStream inputStream, List<CellError> cellErrors)
+			throws InvalidFormatException, InvalidHeaderRowException {
+		return doParse(reverseHeaderMap, inputStream, null, SepRecordType.MAP, cellErrors);
+	}
+
+	private static <T> List<T> doParse(Map<String, String> reverseHeaderMap, InputStream inputStream,
+									   Class<T> recordClassIfJavaBean, SepRecordType recordType, List<CellError> cellErrors)
+			throws InvalidFormatException, InvalidHeaderRowException {
+
+		validateReverseHeaderMap(reverseHeaderMap);
 
 		Workbook workbook = toWorkbook(inputStream);
 		if (workbook.getNumberOfSheets() <= 0) {
@@ -554,13 +608,14 @@ public class Ssio {
 			if (row == null) {
 				continue;
 			}
-			T record = parseDataRow(columnMetaMap, row, rowIndex, recordClass,
+
+			T record = (T) parseDataRow(columnMetaMap, row, rowIndex, recordType, recordClassIfJavaBean,
 					cellErrors);
 			records.add(record);
 		}
 		return records;
 	}
-	
+
 	/**
 	 * please check the doc of {@link #parse(Map, InputStream, List, Class)}
 	 * @param reverseHeaderMap
@@ -575,8 +630,6 @@ public class Ssio {
 			Class<T> recordClass) throws InvalidFormatException, InvalidHeaderRowException {
 		try (InputStream input = new FileInputStream(inputFile)) {
 			return parse(reverseHeaderMap, input, cellErrors, recordClass);
-		} catch (FileNotFoundException e) {
-			throw new IllegalArgumentException(e);
 		} catch (IOException e) {
 			throw new IllegalStateException(e);
 		}
@@ -829,10 +882,22 @@ public class Ssio {
 
 	}
 
-	private static <T> T parseDataRow(Map<Short, ColumnMeta> columnMetaMap,
-			Row row, int rowIndex, Class<T> recordClass,
+	private static Object parseDataRow(Map<Short, ColumnMeta> columnMetaMap,
+			Row row, int rowIndex, SepRecordType recordType, Class recordClassIfJavaBean,
 			List<CellError> cellErrors) {
-		T record = createRecordInstance(recordClass);
+
+		Object record;
+		switch (recordType){
+			case JAVABEAN:
+				record = createRecordInstance(recordClassIfJavaBean);
+				break;
+			case MAP:
+				record = new LinkedHashMap<String, String>();
+				break;
+			default:
+				throw new IllegalArgumentException("Unsupported record type: " + recordType);
+		}
+
 
 		for (short columnIndex = 0; columnIndex < row.getLastCellNum(); columnIndex++) {
 			ColumnMeta columnMeta = columnMetaMap.get(columnIndex);
@@ -842,19 +907,36 @@ public class Ssio {
 			String propName = columnMeta.propName;
 			Cell cell = row.getCell(columnIndex);
 			Object cellStringOrDate = readCellAsStringOrDate(cell);
-			try {
-				setPropertyWithCellValue(recordClass, record, propName,
-						cellStringOrDate);
-			} catch (Exception e) {
-				if (cellErrors != null) {
-					CellError ce = new CellError();
-					ce.setColumnIndex(columnIndex);
-					ce.setHeaderText(columnMeta.headerText);
-					ce.setPropName(propName);
-					ce.setRowIndex(rowIndex);
-					ce.setCause(e);
-					cellErrors.add(ce);
-				}
+
+			switch (recordType){
+				case JAVABEAN:
+					try {
+						setPropertyWithCellValue(recordClassIfJavaBean, record, propName,
+								cellStringOrDate);
+					} catch (Exception e) {
+						if (cellErrors != null) {
+							CellError ce = new CellError();
+							ce.setColumnIndex(columnIndex);
+							ce.setHeaderText(columnMeta.headerText);
+							ce.setPropName(propName);
+							ce.setRowIndex(rowIndex);
+							ce.setCause(e);
+							cellErrors.add(ce);
+						}
+					}
+					break;
+				case MAP:
+					Map<String, String> map = (Map<String, String>) record;
+					String value;
+					if (cellStringOrDate instanceof Date) {
+						value = DateFormatUtils.format(((Date) cellStringOrDate), SepConstants.DEAULT_DATE_FORMAT);
+					} else {
+						value = cellStringOrDate.toString();
+					}
+					map.put(propName, value);
+					break;
+				default:
+					throw new IllegalArgumentException("Unsupported record type: " + recordType);
 			}
 		}
 
