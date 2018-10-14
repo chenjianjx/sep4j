@@ -258,6 +258,117 @@ public class SsioIntegrationTest {
 		Assert.assertTrue(secondAppendingError.getCause().getMessage().contains("no getter method"));
 	}
 
+
+	@Test
+	public void saveAndAppendMapsTest_File() throws InvalidFormatException, IOException {
+		LinkedHashMap<String, String> headerMap = new LinkedHashMap<String, String>();
+		headerMap.put("primInt", "Primitive Int");
+		headerMap.put("fake", "Not Real");
+		headerMap.put("str", "Str");
+
+		LinkedHashMap<String, Object> record = new LinkedHashMap<String, Object>();
+		record.put("primInt", 123);
+		record.put("str",  "first row string");
+
+		Collection<Map<String, Object>> records = Arrays.asList(record);
+		File theFile = createFile("saveAndAppendMapsTest_File");
+		String datumErrPlaceholder = "!!ERROR!!";
+		List<DatumError> datumErrors = new ArrayList<DatumError>();
+
+		// save it
+		Ssio.saveMaps(headerMap, records, theFile, datumErrPlaceholder, datumErrors);
+
+		// then parse it
+		byte[] spreadsheet = FileUtils.readFileToByteArray(theFile);
+		Workbook workbook = WorkbookFactory.create(new ByteArrayInputStream(spreadsheet));
+
+		/*** do assertions ***/
+		Sheet sheet = workbook.getSheetAt(0);
+		Row headerRow = sheet.getRow(0);
+		Row dataRow = sheet.getRow(1);
+
+		Cell cell00 = headerRow.getCell(0);
+		Cell cell01 = headerRow.getCell(1);
+		Cell cell02 = headerRow.getCell(2);
+		Cell cell10 = dataRow.getCell(0);
+		Cell cell11 = dataRow.getCell(1);
+		Cell cell12 = dataRow.getCell(2);
+
+		// texts
+		Assert.assertEquals("Primitive Int", cell00.getStringCellValue());
+		Assert.assertEquals("Not Real", cell01.getStringCellValue());
+		Assert.assertEquals("Str", cell02.getStringCellValue());
+		Assert.assertEquals("123", cell10.getStringCellValue());
+		Assert.assertEquals("", cell11.getStringCellValue());
+		Assert.assertEquals("first row string", cell12.getStringCellValue());
+
+		// errors
+		Assert.assertEquals(0, datumErrors.size());
+
+		// now append 2 records
+		LinkedHashMap<String, Object> record2 = new LinkedHashMap<String, Object>();
+		record2.put("primInt", 456);
+		record2.put("str",  "row2 string");
+
+		LinkedHashMap<String, Object> record3 = new LinkedHashMap<String, Object>();
+		record3.put("primInt",789);
+		record3.put("str",  "row3 string");
+
+		// append them
+		String datumErrPlaceholder2 = "!!APPENED-ROW-ERROR!!";
+		List<DatumError> datumErrors2 = new ArrayList<>();
+		Ssio.appendMapsTo(headerMap, Arrays.asList(record2, record3), theFile, datumErrPlaceholder2, datumErrors2);
+		// parse again
+		spreadsheet = FileUtils.readFileToByteArray(theFile);
+		workbook = WorkbookFactory.create(new ByteArrayInputStream(spreadsheet));
+
+		/*** do assertions again ***/
+		sheet = workbook.getSheetAt(0);
+		headerRow = sheet.getRow(0);
+		dataRow = sheet.getRow(1);
+
+		Assert.assertEquals(3, sheet.getLastRowNum());
+
+		// the original rows should not be changed
+		cell00 = headerRow.getCell(0);
+		cell01 = headerRow.getCell(1);
+		cell02 = headerRow.getCell(2);
+		cell10 = dataRow.getCell(0);
+		cell11 = dataRow.getCell(1);
+		cell12 = dataRow.getCell(2);
+
+		Assert.assertEquals("Primitive Int", cell00.getStringCellValue());
+		Assert.assertEquals("Not Real", cell01.getStringCellValue());
+		Assert.assertEquals("Str", cell02.getStringCellValue());
+		Assert.assertEquals("123", cell10.getStringCellValue());
+		Assert.assertEquals("", cell11.getStringCellValue());
+		Assert.assertEquals("first row string", cell12.getStringCellValue());
+
+		// now the new row
+		Row dataRow2 = sheet.getRow(2);
+		Cell cell20 = dataRow2.getCell(0);
+		Cell cell21 = dataRow2.getCell(1);
+		Cell cell22 = dataRow2.getCell(2);
+
+		Row dataRow3 = sheet.getRow(3);
+		Cell cell30 = dataRow3.getCell(0);
+		Cell cell31 = dataRow3.getCell(1);
+		Cell cell32 = dataRow3.getCell(2);
+
+		Assert.assertEquals("456", cell20.getStringCellValue());
+		Assert.assertEquals("", cell21.getStringCellValue());
+		Assert.assertEquals("row2 string", cell22.getStringCellValue());
+
+		Assert.assertEquals("789", cell30.getStringCellValue());
+		Assert.assertEquals("", cell31.getStringCellValue());
+		Assert.assertEquals("row3 string", cell32.getStringCellValue());
+
+		// new errors
+		Assert.assertEquals(0, datumErrors2.size());
+	}
+
+
+
 	
 	@Test
 	public void saveTest_IgnoringErrors() throws InvalidFormatException, IOException {

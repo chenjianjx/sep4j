@@ -1,22 +1,5 @@
 package org.sep4j;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
@@ -34,6 +17,23 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.sep4j.support.SepBasicTypeConverts;
 import org.sep4j.support.SepRecordType;
 import org.sep4j.support.SepReflectionHelper;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * The facade to do records saving and retrieving. Ssio = SpreadSheet
@@ -61,6 +61,13 @@ public class Ssio {
 	}
 
 	/**
+	 * please check the doc of {@link #saveMaps(Map, Collection, OutputStream)}
+     */
+	public static void saveMaps(Collection<String> keys, Collection<Map<String, Object>> records, OutputStream outputStream) {
+		saveMaps(HeaderUtils.generateHeaderMapFromPropNames(keys), records, outputStream);
+	}
+
+	/**
 	 * save records to a new workbook even if there are datum errors in the
 	 * records. Any datum error will lead to an empty cell.
 	 * 
@@ -78,7 +85,16 @@ public class Ssio {
 			Collection<T> records, OutputStream outputStream) {
 		doSave(headerMap, records, SepRecordType.JAVABEAN, outputStream, null, null, true);
 	}
-	
+
+	/**
+	 * please check the doc of {@link #saveMaps(Map, Collection, OutputStream, String, List)}
+     */
+	public static void saveMaps(Map<String, String> headerMap,
+								Collection<Map<String, Object>> records, OutputStream outputStream) {
+		saveMaps(headerMap, records, outputStream, null, null);
+	}
+
+
 	/**
 	 * please check the doc of {@link #save(Map, Collection, OutputStream)}
 	 * @param headerMap
@@ -94,7 +110,22 @@ public class Ssio {
 			throw new IllegalStateException(e);
 		}
 	}
-	
+
+
+	/**
+	 * please check the doc of {@link #saveMaps(Map, Collection, OutputStream)}
+	 */
+	public static void saveMaps(Map<String, String> headerMap, Collection<Map<String, Object>> records, File outputFile) {
+		try (OutputStream outputStream = new FileOutputStream(outputFile)) {
+			save(headerMap, records, outputStream);
+		} catch (FileNotFoundException e) {
+			throw new IllegalArgumentException(e);
+		} catch (IOException e) {
+			throw new IllegalStateException(e);
+		}
+	}
+
+
 	/**
 	 * please check the doc of {@link #save(Class, Collection, OutputStream)}
 	 * @param recordClass
@@ -104,6 +135,19 @@ public class Ssio {
 	public static <T> void save(Class<T> recordClass, Collection<T> records, File outputFile) {
 		try (OutputStream outputStream = new FileOutputStream(outputFile)) {
 			save(recordClass, records, outputStream);
+		} catch (FileNotFoundException e) {
+			throw new IllegalArgumentException(e);
+		} catch (IOException e) {
+			throw new IllegalStateException(e);
+		}
+	}
+
+	/**
+	 * please check the doc of {@link #saveMaps(Collection, Collection, OutputStream)}
+	 */
+	public static void saveMaps(Collection<String> keys, Collection<Map<String, Object>> records, File outputFile) {
+		try (OutputStream outputStream = new FileOutputStream(outputFile)) {
+			saveMaps(keys, records, outputStream);
 		} catch (FileNotFoundException e) {
 			throw new IllegalArgumentException(e);
 		} catch (IOException e) {
@@ -164,6 +208,8 @@ public class Ssio {
 		doSave(headerMap, records, SepRecordType.JAVABEAN, outputStream, datumErrPlaceholder,
 				datumErrors, true);
 	}
+
+
 	
 	/**
 	 * please check the doc of {@link #save(Map, Collection, OutputStream, String, List)}
@@ -184,6 +230,47 @@ public class Ssio {
 		}
 	}
 
+	/**
+	 * save a collection of maps to a new workbook even if there are datum errors in the
+	 * records. Any datum error will lead to datumErrPlaceholder being written
+	 * to the cell. All the datum errors will be saved to datumErrors indicating
+	 * the recordIndex of the datum
+	 *
+	 * @param headerMap
+	 *            {@code <propName, headerText>, for example <"username" field of User class, "User Name" as the spreadsheet header text>. }
+	 * @param records
+	 *            the records to save.
+	 * @param outputStream
+	 *            the output stream for the spreadsheet
+	 * @param datumErrPlaceholder
+	 *            if some datum is wrong, write this place holder to the cell
+	 *            (stillSaveIfDataError should be set true)
+	 * @param datumErrors
+	 *            all data errors in the records
+	 *
+	 */
+	public static void saveMaps(Map<String, String> headerMap,
+								Collection<Map<String, Object>> records, OutputStream outputStream,
+								String datumErrPlaceholder, List<DatumError> datumErrors) {
+		doSave(headerMap, records, SepRecordType.MAP, outputStream, datumErrPlaceholder,
+				datumErrors, true);
+	}
+
+
+	/**
+	 * please check the doc of {@link #saveMaps(Map, Collection, File, String, List)}
+	 */
+	public static void saveMaps(Map<String, String> headerMap,
+								Collection<Map<String, Object>> records, File outputFile,
+								String datumErrPlaceholder, List<DatumError> datumErrors) {
+		try (OutputStream outputStream = new FileOutputStream(outputFile)) {
+			saveMaps(headerMap, records, outputStream, datumErrPlaceholder, datumErrors);
+		} catch (FileNotFoundException e) {
+			throw new IllegalArgumentException(e);
+		} catch (IOException e) {
+			throw new IllegalStateException(e);
+		}
+	}
 
 	/**
 	 * please check the doc of {@link #appendTo(Map, Collection, File, String, List)}
@@ -196,10 +283,11 @@ public class Ssio {
 	 * append records to an existing spreadsheet file
 	 * @param headerMap
 	 *            {@code <propName, headerText>, for example <"username" field of User class, "User Name" as the spreadsheet header text>. }
+	 *            Note: the number and sequence of the map's keys have to be the same as the header of the existing spreadsheet file
 	 * @param records
 	 *            the records to save.
 	 * @param file
-	 *            the file to append to
+	 *            the exiting file to append to
 	 * @param datumErrPlaceholder
 	 *            if some datum is wrong, write this place holder to the cell
 	 *            (stillSaveIfDataError should be set true)
@@ -212,6 +300,28 @@ public class Ssio {
 	public static <T> void appendTo(Map<String, String> headerMap, Collection<T> records, File file,
 									String datumErrPlaceholder, List<DatumError> datumErrors) {
 		doAppend(headerMap, records, SepRecordType.JAVABEAN, file, datumErrPlaceholder, datumErrors);
+	}
+
+
+	/**
+	 * append a collection of Maps to an existing spreadsheet file
+	 * @param headerMap
+	 *            {@code <propName, headerText>, for example <"username" field of User class, "User Name" as the spreadsheet header text>. }
+	 *            Note: the number and sequence of the map's keys have to be the same as the header of the existing spreadsheet file
+	 * @param records
+	 *            the records to save.
+	 * @param file
+	 *            the exiting file to append to
+	 * @param datumErrPlaceholder
+	 *            if some datum is wrong, write this place holder to the cell
+	 *            (stillSaveIfDataError should be set true)
+	 * @param datumErrors
+	 *            all data errors in the records
+	 *
+	 */
+	public static void appendMapsTo(Map<String, String> headerMap, Collection<Map<String, Object>> records, File file,
+									String datumErrPlaceholder, List<DatumError> datumErrors) {
+		doAppend(headerMap, records, SepRecordType.MAP, file, datumErrPlaceholder, datumErrors);
 	}
 
 	/**

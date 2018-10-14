@@ -2,6 +2,7 @@ package org.sep4j;
 
 import java.beans.PropertyDescriptor;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,11 +26,10 @@ public class HeaderUtils {
 	 * @return A modifiable map.  Feel free to add or remove elements.
 	 */
 	public static Map<String, String> generateHeaderMapFromProps(Class<?> beanClass) {
-		LinkedHashMap<String, String> resultMap = new LinkedHashMap<String, String>();
 
 		PropertyDescriptor[] pdArray = PropertyUtils.getPropertyDescriptors(beanClass);
 		if (pdArray == null || pdArray.length == 0) {
-			return resultMap;
+			return new LinkedHashMap<String, String>();
 		}
 
 		List<PropertyDescriptor> readablePdList = Arrays.stream(pdArray)
@@ -37,12 +37,27 @@ public class HeaderUtils {
 				.filter(pd -> pd.getReadMethod() != null)
 				.collect(Collectors.toList());
 		List<String> finalProps = readablePdList.stream().map(pd -> pd.getName()).collect(Collectors.toList());
+		return generateHeaderMapFromPropNames(finalProps);
+	}
 
-		for (String propName : finalProps) {
+
+	/**
+	 * property "firstName" will lead to a map entry of "firstName" => "First Name"
+	 *
+	 * @param propNames
+	 * @return A modifiable map.  Feel free to add or remove elements.
+	 */
+	public static Map<String, String> generateHeaderMapFromPropNames(Collection<String> propNames) {
+		LinkedHashMap<String, String> resultMap = new LinkedHashMap<String, String>();
+
+		if(propNames == null || propNames.isEmpty()){
+			return resultMap;
+		}
+
+		for (String propName : propNames) {
 			String headerName = SepStringHelper.camelCaseToCapitalizedWords(propName);
 			resultMap.put(propName, headerName);
 		}
-
 		return resultMap;
 	}
 
