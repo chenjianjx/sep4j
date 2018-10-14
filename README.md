@@ -172,6 +172,34 @@ public void setRoles(String rolesString){
 
 ---
 ### Advanced Usages
+
+#### Deal with Maps instead of Javabeans 
+
+In some cases you have a collection of Maps and you don't want to bother creating a class. This can help:  
+
+##### Save
+````
+ImmutableMap<String, Object> record1 = ImmutableMap.of("firstName", "Jim", "lastName", "Green");
+ImmutableMap<String, Object> record2 = ImmutableMap.of("firstName", "Li", "lastName", "Lei");
+List<Map<String,Object>> records = Arrays.asList(record1, record2);
+ImmutableMap<String, String> headerMap = ImmutableMap.of("firstName", "First Name", "lastName", "Last Name");
+Ssio.saveMaps(headerMap, records, spreadsheetOutputStream);
+````
+
+You can also let sep4j generate a header map for you, by just providing the map's keys
+
+````
+Ssio.saveMaps(Arrays.asList("firstName", "lastName"), records, spreadsheetOutputStream);
+````
+
+#### Parse
+````
+Map<String, String> reverseHeaderMap = ImmutableMap.of("User Id", "userId",
+				"First Name", "firstName", "Last Name", "lastName");
+List<Map<String, String>> users = Ssio.parseToMapsIgnoringErrors(reverseHeaderMap,  inputStream);
+
+````
+
 #### Append records to a spreadsheet file
 ````
 Ssio.appendTo(headerMap, newListToAppend, theFile);
