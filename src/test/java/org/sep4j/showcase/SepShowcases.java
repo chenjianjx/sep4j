@@ -80,6 +80,24 @@ public class SepShowcases {
 
 
 
+	@Test
+	public void saveMaps() throws IOException {
+		ByteArrayOutputStream spreadsheetOutputStream = new ByteArrayOutputStream();
+
+		ImmutableMap<String, Object> record1 = ImmutableMap.of("firstName", "Jim", "lastName", "Green");
+		ImmutableMap<String, Object> record2 = ImmutableMap.of("firstName", "Li", "lastName", "Lei");
+		List<Map<String,Object>> records = Arrays.asList(record1, record2);
+		ImmutableMap<String, String> headerMap = ImmutableMap.of("firstName", "First Name", "lastName", "Last Name");
+		Ssio.saveMaps(headerMap, records, spreadsheetOutputStream);
+
+		//You can also let sep4j generate a header map for you, by just providing the map's keys
+		Ssio.saveMaps(Arrays.asList("firstName", "lastName"), records, spreadsheetOutputStream);
+
+		byte[] spreadsheet = spreadsheetOutputStream.toByteArray();
+		File theFile = createFile("saveMaps");
+		FileUtils.writeByteArrayToFile(theFile, spreadsheet);
+		System.out.println("File saved as " + theFile.getAbsolutePath());
+	}
 
 
 	@Test
@@ -182,6 +200,17 @@ public class SepShowcases {
 		InputStream inputStream = toByteArrayInputStreamAndClose(new FileInputStream(file));
 		List<User> users = Ssio.parseIgnoringErrors(inputStream, User.class);
 		System.out.println(users);	 
+	}
+
+
+	@Test
+	public void parseMaps() throws IOException {
+		File file = doSave();
+		InputStream inputStream = toByteArrayInputStreamAndClose(new FileInputStream(file));
+		Map<String, String> reverseHeaderMap = ImmutableMap.of("User Id", "userId",
+				"First Name", "firstName", "Last Name", "lastName");
+		List<Map<String, String>> users = Ssio.parseToMapsIgnoringErrors(reverseHeaderMap,  inputStream);
+		System.out.println(users);
 	}
 
 	private File doSave() throws IOException {
