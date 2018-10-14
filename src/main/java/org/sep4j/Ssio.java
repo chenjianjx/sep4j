@@ -32,6 +32,7 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.sep4j.support.SepBasicTypeConverts;
+import org.sep4j.support.SepRecordType;
 import org.sep4j.support.SepReflectionHelper;
 
 /**
@@ -43,6 +44,7 @@ import org.sep4j.support.SepReflectionHelper;
  * 
  */
 public class Ssio {
+
 	
 	/**
 	 * please check the doc of {@link #save(Map, Collection, OutputStream)} .
@@ -55,17 +57,17 @@ public class Ssio {
 	 * @param outputStream
 	 */
 	public static <T> void save(Class<T> recordClass, Collection<T> records, OutputStream outputStream) {
-		save(HeaderUtils.generateHeaderMapFromProps(recordClass), records, outputStream, null, null, true);
+		doSave(HeaderUtils.generateHeaderMapFromProps(recordClass), records, SepRecordType.JAVABEAN, outputStream, null, null, true);
 	}
 
 	/**
-	 * save records to a new workbook even if there are datum errors in the
+	 * doSave records to a new workbook even if there are datum errors in the
 	 * records. Any datum error will lead to an empty cell.
 	 * 
 	 * @param headerMap
 	 *            {@code <propName, headerText>, for example <"username" field of User class, "User Name" as the spreadsheet header text>. }
 	 * @param records
-	 *            the records to save.
+	 *            the records to doSave.
 	 * @param outputStream
 	 *            the output stream for the spreadsheet
 	 * @param <T>
@@ -74,7 +76,7 @@ public class Ssio {
 	 */
 	public static <T> void save(Map<String, String> headerMap,
 			Collection<T> records, OutputStream outputStream) {
-		save(headerMap, records, outputStream, null, null, true);
+		doSave(headerMap, records, SepRecordType.JAVABEAN, outputStream, null, null, true);
 	}
 	
 	/**
@@ -111,7 +113,7 @@ public class Ssio {
 	
 
 	/**
-	 * save records to a new workbook even if there are datum errors in the
+	 * doSave records to a new workbook even if there are datum errors in the
 	 * records. Any datum error will lead to datumErrPlaceholder being written
 	 * to the cell.
 	 * 
@@ -119,7 +121,7 @@ public class Ssio {
 	 *            {@code <propName, headerText>, for example <"username" field of User class, "User Name" as the spreadsheet header text>. }
 	 * 
 	 * @param records
-	 *            the records to save.
+	 *            the records to doSave.
 	 * @param outputStream
 	 *            the output stream for the spreadsheet
 	 * @param datumErrPlaceholder
@@ -131,12 +133,12 @@ public class Ssio {
 	public static <T> void save(Map<String, String> headerMap,
 			Collection<T> records, OutputStream outputStream,
 			String datumErrPlaceholder) {
-		save(headerMap, records, outputStream, datumErrPlaceholder, null, true);
+		doSave(headerMap, records, SepRecordType.JAVABEAN, outputStream, datumErrPlaceholder, null, true);
 	}
 	
 
 	/**
-	 * save records to a new workbook even if there are datum errors in the
+	 * doSave records to a new workbook even if there are datum errors in the
 	 * records. Any datum error will lead to datumErrPlaceholder being written
 	 * to the cell. All the datum errors will be saved to datumErrors indicating
 	 * the recordIndex of the datum
@@ -144,7 +146,7 @@ public class Ssio {
 	 * @param headerMap
 	 *            {@code <propName, headerText>, for example <"username" field of User class, "User Name" as the spreadsheet header text>. }
 	 * @param records
-	 *            the records to save.
+	 *            the records to doSave.
 	 * @param outputStream
 	 *            the output stream for the spreadsheet
 	 * @param datumErrPlaceholder
@@ -159,7 +161,7 @@ public class Ssio {
 	public static <T> void save(Map<String, String> headerMap,
 			Collection<T> records, OutputStream outputStream,
 			String datumErrPlaceholder, List<DatumError> datumErrors) {
-		save(headerMap, records, outputStream, datumErrPlaceholder,
+		doSave(headerMap, records, SepRecordType.JAVABEAN, outputStream, datumErrPlaceholder,
 				datumErrors, true);
 	}
 	
@@ -174,7 +176,7 @@ public class Ssio {
 	public static <T> void save(Map<String, String> headerMap, Collection<T> records, File outputFile,
 			String datumErrPlaceholder, List<DatumError> datumErrors) {
 		try (OutputStream outputStream = new FileOutputStream(outputFile)) {
-			save(headerMap, records, outputStream, datumErrPlaceholder, datumErrors, true);
+			doSave(headerMap, records, SepRecordType.JAVABEAN, outputStream, datumErrPlaceholder, datumErrors, true);
 		} catch (FileNotFoundException e) {
 			throw new IllegalArgumentException(e);
 		} catch (IOException e) {
@@ -195,7 +197,7 @@ public class Ssio {
 	 * @param headerMap
 	 *            {@code <propName, headerText>, for example <"username" field of User class, "User Name" as the spreadsheet header text>. }
 	 * @param records
-	 *            the records to save.
+	 *            the records to doSave.
 	 * @param file
 	 *            the file to append to
 	 * @param datumErrPlaceholder
@@ -209,6 +211,30 @@ public class Ssio {
      */
 	public static <T> void appendTo(Map<String, String> headerMap, Collection<T> records, File file,
 									String datumErrPlaceholder, List<DatumError> datumErrors) {
+		doAppend(headerMap, records, SepRecordType.JAVABEAN, file, datumErrPlaceholder, datumErrors);
+	}
+
+	/**
+	 * append records to an existing spreadsheet file
+	 * @param headerMap
+	 *            {@code <propName, headerText>, for example <"username" field of User class, "User Name" as the spreadsheet header text>. }
+	 * @param records
+	 *            the records to doSave.
+	 * @param recordType the type of data structure of the record
+	 *
+	 * @param file
+	 *            the file to append to
+	 * @param datumErrPlaceholder
+	 *            if some datum is wrong, write this place holder to the cell
+	 *            (stillSaveIfDataError should be set true)
+	 * @param datumErrors
+	 *            all data errors in the records
+	 *
+	 * @param <T>
+	 *            the java type of records
+	 */
+	private static <T> void doAppend(Map<String, String> headerMap, Collection<T> records, SepRecordType recordType,
+									 File file, String datumErrPlaceholder, List<DatumError> datumErrors) {
 		validateHeaderMap(headerMap);
 
 		if (records == null) {
@@ -228,7 +254,7 @@ public class Ssio {
 			int recordIndex = 0;
 			int rowIndex = lastRowNum + 1;
 			for (T record : records) {
-				createRow(headerMap, record, recordIndex, sheet, rowIndex,
+				createRow(headerMap, record, recordType, recordIndex, sheet, rowIndex,
 						datumErrPlaceholder, datumErrors);
 				recordIndex++;
 				rowIndex++;
@@ -252,7 +278,7 @@ public class Ssio {
 
 
 	/**
-	 * save records to a new workbook only if there are no datum errors in the
+	 * doSave records to a new workbook only if there are no datum errors in the
 	 * records. Any datum error will lead to datumErrPlaceholder being written
 	 * to the cell. All the datum errors will be saved to datumErrors indicating
 	 * the recordIndex of the datum
@@ -260,7 +286,7 @@ public class Ssio {
 	 * @param headerMap
 	 *            {@code <propName, headerText>, for example <"username" field of User class, "User Name" as the spreadsheet header text>. }
 	 * @param records
-	 *            the records to save.
+	 *            the records to doSave.
 	 * @param outputStream
 	 *            the output stream for the spreadsheet
 	 * @param datumErrPlaceholder
@@ -276,7 +302,7 @@ public class Ssio {
 			Map<String, String> headerMap, Collection<T> records,
 			OutputStream outputStream, String datumErrPlaceholder,
 			List<DatumError> datumErrors) {
-		save(headerMap, records, outputStream, datumErrPlaceholder,
+		doSave(headerMap, records, SepRecordType.JAVABEAN, outputStream, datumErrPlaceholder,
 				datumErrors, false);
 	}
 
@@ -447,12 +473,12 @@ public class Ssio {
 	}
 
 	/**
-	 * save records to a new workbook.
+	 * doSave records to a new workbook.
 	 * 
 	 * @param headerMap
 	 *            {@code <propName, headerText>, for example <"username" field of User class, "User Name" as the spreadsheet header text>. }
 	 * @param records
-	 *            the records to save.
+	 *            the records to doSave.
 	 * @param outputStream
 	 *            the output stream for the spreadsheet
 	 * @param datumErrPlaceholder
@@ -461,15 +487,15 @@ public class Ssio {
 	 * @param datumErrors
 	 *            all data errors in the records
 	 * @param stillSaveIfDataError
-	 *            if there are errors in data, should we still save the records
+	 *            if there are errors in data, should we still doSave the records
 	 *            ?
 	 * 
 	 * 
 	 */
-	static <T> void save(Map<String, String> headerMap,
-			Collection<T> records, OutputStream outputStream,
-			String datumErrPlaceholder, List<DatumError> datumErrors,
-			boolean stillSaveIfDataError) {
+	static <T> void doSave(Map<String, String> headerMap,
+						   Collection<T> records, SepRecordType recordType, OutputStream outputStream,
+						   String datumErrPlaceholder, List<DatumError> datumErrors,
+						   boolean stillSaveIfDataError) {
 		validateHeaderMap(headerMap);
 
 		if (records == null) {
@@ -488,7 +514,7 @@ public class Ssio {
 		int recordIndex = 0;
 		for (T record : records) {
 			int rowIndex = recordIndex + 1;
-			createRow(headerMap, record, recordIndex, sheet, rowIndex,
+			createRow(headerMap, record, recordType, recordIndex, sheet, rowIndex,
 					datumErrPlaceholder, datumErrors);
 			recordIndex++;
 		}
@@ -794,8 +820,8 @@ public class Ssio {
 	}
 
 	private static <T> Row createRow(Map<String, String> headerMap,
-			T record, int recordIndex, Sheet sheet, int rowIndex,
-			String datumErrPlaceholder, List<DatumError> datumErrors) {
+									 T record, SepRecordType recordType, int recordIndex, Sheet sheet, int rowIndex,
+									 String datumErrPlaceholder, List<DatumError> datumErrors) {
 		Row row = sheet.createRow(rowIndex);
 		int columnIndex = 0;
 
@@ -804,7 +830,7 @@ public class Ssio {
 			String propName = entry.getKey();
 			Object propValue = null;
 			try {
-				propValue = SepReflectionHelper.getProperty(record, propName);
+				propValue = getProperty(record, recordType, propName);
 			} catch (Exception e) {
 				if (datumErrors != null) {
 					DatumError de = new DatumError();
@@ -832,6 +858,22 @@ public class Ssio {
 		}
 
 		return row;
+	}
+
+	private static <T> Object getProperty(T record, SepRecordType recordType, String propName) {
+
+		switch(recordType){
+			case JAVABEAN: {
+				return SepReflectionHelper.getProperty(record, propName);
+			}
+			case MAP: {
+				Map map = (Map) record;
+				return map.get(propName);
+			}
+			default: {
+				throw new IllegalArgumentException("Unsupported record type: " + recordType);
+			}
+		}
 	}
 
 	private static Cell createCell(Row row, int columnIndex) {
