@@ -27,6 +27,7 @@ headerMap.put("userId", "User Id"); // "userId" is a property of the javabeans y
 headerMap.put("firstName", "First Name");
 headerMap.put("lastName", "Last Name");
 
+OutputStream spreadsheetOutputStream = new FileOutputStream("someExcelFile.xlsx");
 Ssio.save(headerMap, userList, spreadsheetOutputStream);	
 //"spreadsheetOutputStream" can be replaced with "spreadsheetOutputFile" (a java.io.File object) 	
 ```
@@ -60,6 +61,7 @@ reverseHeaderMap.put("User Id", "userId");  //"User Id" is a column header in th
 reverseHeaderMap.put("First Name", "firstName");
 reverseHeaderMap.put("Last Name","lastName");
 
+InputStream spreadsheetInputStream = new FileInputStream("someExcelFile.xlsx");
 List<User> users = Ssio.parseIgnoringErrors(reverseHeaderMap, spreadsheetInputStream, User.class); 
 //"spreadsheetInputStream" can be replaced with "spreadsheetInputFile" (a java.io.File object) 	
 ```
