@@ -1,4 +1,4 @@
-# ![#f03c15](https://via.placeholder.com/15/f03c15/000000?text=+) Note:  please use [ssio](https://github.com/chenjianjx/ssio) instead, annotation-based and strong-typed in cells
+# ![#f03c15](https://via.placeholder.com/15/f03c15/000000?text=+) Please use [ssio](https://github.com/chenjianjx/ssio) instead, annotation-based and strong-typed in cells
  
 
 
