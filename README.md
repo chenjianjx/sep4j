@@ -1,11 +1,12 @@
+# ![#f03c15](https://via.placeholder.com/15/f03c15/000000?text=+) Note:  please use [ssio](https://github.com/chenjianjx/ssio) instead, annotation-based and strong-typed in cells
+ 
+
+
+---
 ## Sep4j = Simple Spreadsheet Processing for Java
 ---
 
 It's a wrapper of Apache POI, with which you can do javabeans <-> spreadsheet conversion even more easily.
-
- 
-- ![#f03c15](https://via.placeholder.com/15/f03c15/000000?text=+) Note:  please use [ssio](https://github.com/chenjianjx/ssio) instead, annotation-based and strong-typed in cells
- 
  
 
 ### Quick Start
