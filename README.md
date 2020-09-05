@@ -4,7 +4,7 @@
 It's a wrapper of Apache POI, with which you can do javabeans <-> spreadsheet conversion even more easily.
 
 ```diff
-- Note:  please use [ssio] instead, annotation-based and strong-typed in cells
+- Note:  please use [ssio](https://github.com/chenjianjx/ssio) instead, annotation-based and strong-typed in cells
  
 ```
  
