@@ -1,8 +1,3 @@
-# ![#f03c15](https://via.placeholder.com/15/f03c15/000000?text=+) Please use [ssio](https://github.com/chenjianjx/ssio) instead, annotation-based and strong-typed in cells
- 
-
-
----
 ## Sep4j = Simple Spreadsheet Processing for Java
 ---
 
@@ -153,6 +148,7 @@ headerMap.put("birthDayString", "Birth Date");
 
 * Can I let Sep4j produce Numeric-typed cells or another type others than String ? 
     - No, you can't. This is how Sep4j keeps itself simple.
+    - You can use [ssio](https://github.com/chenjianjx/ssio) for that purpose, which was made by the same author. 
 
 #### Parse
 
